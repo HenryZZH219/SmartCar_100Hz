@@ -67,7 +67,7 @@ unsigned char Image_Use[LCDH][LCDW];
 
 /** 二值化后用于OLED显示的数据 */
 unsigned char Bin_Image[LCDH][LCDW];
-
+unsigned short L_Threshold=80;
 sint16 OFFSET0 = 0;      //最远处，赛道中心值综合偏移量
 sint16 OFFSET1 = 0;      //第二格
 sint16 OFFSET2 = 0;      //最近，第三格
@@ -319,21 +319,39 @@ void CAMERA_Init (unsigned char fps)
  *************************************************************************/
 void Get_Use_Image(void)
 {
-    short i = 0, j = 0, row = 0, line = 0;
-
-    for (i = 0; i < IMAGEH; i += 2)          //神眼高 120 / 2  = 60，
+    int i = 0, j = 0;
+/*
+    for (i = 1; i < IMAGEH; i += 2)          //神眼高 120 / 2  = 60，
     // for (i = 0; i < IMAGEH; i += 3)       //OV7725高 240 / 3  = 80，
     {
-        for (j = 0; j <= IMAGEW; j += 2)     //神眼宽188 / 2  = 94，
+        for (j = 1; j <= IMAGEW; j += 2)     //神眼宽188 / 2  = 94，
         // for (j = 0; j <= IMAGEW; j += 3)  //OV7725宽320 / 3  = 106，
-        {
-            Image_Use[row][line] = Image_Data[i][j];
+        {   if (i==59)
+            i--;
+            if (j==59)
+            j--;
+            Image_Use[row][line] = Image_Data[i-1][j]/5+Image_Data[i+1][j]/5+Image_Data[i][j+1]/5+Image_Data[i][j-1]/5+Image_Data[i][j]/5;
             line++;
         }
         line = 0;
         row++;
+    }*/
+
+    int x, y;
+
+
+    for(i=0;i<60;i++)
+    {
+        for(j=0;j<94;j++)
+        {
+            Image_Use[i][j]=Image_Data[2*i][2*j];
+            //Image_Use[i][j]=Image_Data[60+i][94+j];
+        }
     }
 }
+
+
+
 
 /*************************************************************************
  *  函数名称：void Get_Bin_Image (unsigned char mode)
@@ -357,6 +375,7 @@ void Get_Bin_Image (unsigned char mode)
     if (mode == 0)
     {
         Threshold = GetOSTU(Image_Use);  //大津法阈值
+        L_Threshold=Threshold;
     }
     if (mode == 1)
     {
@@ -374,7 +393,7 @@ void Get_Bin_Image (unsigned char mode)
     else if (mode == 2)
     {
         Threshold = 80;                          //手动调节阈值
-        lq_sobel(Image_Use, Bin_Image, (unsigned char) Threshold);
+        //lq_sobel(Image_Use, Bin_Image, (unsigned char) Threshold);
 
         return;
 

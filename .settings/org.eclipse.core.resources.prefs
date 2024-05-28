@@ -3,3 +3,4 @@ encoding//src/AppSw/Tricore/APP/LQ_CAMERA.c=UTF-8
 encoding//src/AppSw/Tricore/APP/LQ_CAMERA.h=UTF-8
 encoding//src/AppSw/Tricore/User/LQ_MotorServo.c=UTF-8
 encoding/Cpu0_Main.c=UTF-8
+encoding/Cpu1_Main.c=UTF-8

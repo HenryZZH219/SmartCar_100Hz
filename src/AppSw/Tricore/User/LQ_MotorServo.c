@@ -370,8 +370,8 @@ void TestMotor (void)
  *************************************************************************/
 void ServoInit (void)
 {
-    ATOM_PWM_InitConfig(ATOMSERVO1, Servo_Center_Mid, 50);  //舵机频率为100HZ，初始值为1.5ms中值
-    ATOM_PWM_InitConfig(ATOMSERVO2, Servo_Center_Mid, 50);  //舵机理论范围为：0.5ms--2.5ms，大多舵机实际比这个范围小
+    ATOM_PWM_InitConfig(ATOMSERVO1, Servo_Center_Mid, 75);  //舵机频率为100HZ，初始值为1.5ms中值
+    ATOM_PWM_InitConfig(ATOMSERVO2, Servo_Center_Mid, 75);  //舵机理论范围为：0.5ms--2.5ms，大多舵机实际比这个范围小
 }
 
 /*************************************************************************
@@ -389,8 +389,8 @@ void ServoCtrl (uint32 duty)
     else if (duty <= Servo_Right_Min)            //限制幅值
         duty = Servo_Right_Min;
 
-    ATOM_PWM_InitConfig(ATOMSERVO1, duty, 50);  //舵机频率为100HZ，初始值为1.5ms中值
-    ATOM_PWM_InitConfig(ATOMSERVO2, duty, 50);  //舵机理论范围为：0.5ms--2.5ms，大多舵机实际比这个范围小
+    ATOM_PWM_InitConfig(ATOMSERVO1, duty, 75);  //舵机频率为100HZ，初始值为1.5ms中值
+    ATOM_PWM_InitConfig(ATOMSERVO2, duty, 75);  //舵机理论范围为：0.5ms--2.5ms，大多舵机实际比这个范围小
 }
 
 /*************************************************************************

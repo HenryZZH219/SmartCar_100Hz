@@ -8,5 +8,5 @@ Ifx_IntegralF32.o :	../Libraries/Service/CpuGeneric/SysSe/Math/Ifx_IntegralF32.h
 ../Libraries/Service/CpuGeneric/SysSe/Math/Ifx_IntegralF32.h :
 Ifx_IntegralF32.o :	../Libraries/Service/CpuGeneric/SysSe/Math/Ifx_Cf32.h
 ../Libraries/Service/CpuGeneric/SysSe/Math/Ifx_Cf32.h :
-Ifx_IntegralF32.o :	"D:/AC_DESKTOP/ver600_2/src/AppSw/Ifx_Cfg.h"
-"D:/AC_DESKTOP/ver600_2/src/AppSw/Ifx_Cfg.h" :
+Ifx_IntegralF32.o :	"D:/AC_DESKTOP/100hz/src/AppSw/Ifx_Cfg.h"
+"D:/AC_DESKTOP/100hz/src/AppSw/Ifx_Cfg.h" :

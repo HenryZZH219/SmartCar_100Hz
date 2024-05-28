@@ -6,5 +6,5 @@ Ifx_Crc.o :	../Libraries/Service/CpuGeneric/SysSe/Math/Ifx_Crc.c
 ../Libraries/Service/CpuGeneric/SysSe/Math/Ifx_Crc.c :
 Ifx_Crc.o :	../Libraries/Service/CpuGeneric/SysSe/Math/Ifx_Crc.h
 ../Libraries/Service/CpuGeneric/SysSe/Math/Ifx_Crc.h :
-Ifx_Crc.o :	"D:/AC_DESKTOP/ver600_2/src/AppSw/Ifx_Cfg.h"
-"D:/AC_DESKTOP/ver600_2/src/AppSw/Ifx_Cfg.h" :
+Ifx_Crc.o :	"D:/AC_DESKTOP/100hz/src/AppSw/Ifx_Cfg.h"
+"D:/AC_DESKTOP/100hz/src/AppSw/Ifx_Cfg.h" :

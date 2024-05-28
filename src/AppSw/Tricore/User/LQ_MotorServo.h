@@ -27,14 +27,14 @@
 #define TURN_LEFT    0   // 左转
 #define TURN_RIGHT   1   // 右转
 #define IN_GARAGE    1   // 入库
-#define OUT_GARAGE   0   // 出库
+#define OUT_GARAGE   0   // 出库[
 
-#define Servo_Delta 90
+#define Servo_Delta 135
 
             //舵机左右转动的差值，与舵机型号，拉杆和舵机臂长有关
-#define Servo_Center_Mid 625     //舵机直行中值，
-#define Servo_Left_Max   (Servo_Center_Mid+Servo_Delta)      //舵机左转极限值
-#define Servo_Right_Min  (Servo_Center_Mid-Servo_Delta)      //舵机右转极限值，此值跟舵机放置方式有关，立式
+#define Servo_Center_Mid (1045)     //舵机直行中值，
+#define Servo_Left_Max   (1180)      //舵机左转极限值
+#define Servo_Right_Min  (920)      //舵机右转极限值，此值跟舵机放置方式有关，立式
 
 #define MtTargetDuty  4200  //电机占空比值得最大值，实际需要减去电池电压，编码器，赛道曲率，达不到该值
 

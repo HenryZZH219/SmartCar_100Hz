@@ -1,28 +1,26 @@
 /*LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
-【平    台】北京龙邱智能科技TC264DA核心板
-【编    写】ZYF/chiusir
-【E-mail  】chiusir@163.com
-【软件版本】V1.1 版权所有，单位使用请先联系授权
-【最后更新】2020年10月28日
-【相关信息参考下列地址】
-【网    站】http://www.lqist.cn
-【淘宝店铺】http://longqiu.taobao.com
-------------------------------------------------
-【dev.env.】AURIX Development Studio1.2.2及以上版本
-【Target 】 TC264DA/TC264D
-【Crystal】 20.000Mhz
-【SYS PLL】 200MHz
-________________________________________________________________
-基于iLLD_1_0_1_11_0底层程序,
+ 【平    台】北京龙邱智能科技STC32G12K128 LQFP64核心板
+ 【编    写】chiusir
+ 【E-mail  】chiusir@163.com
+ 【软件版本】V1.1 版权所有，单位使用请先联系授权
+ 【最后更新】2022年3月8日
+ 【相关信息参考下列地址】
+ 【网    站】http://www.lqist.cn
+ 【淘宝店铺】http://longqiu.taobao.com
+ ------------------------------------------------
+ 【IDE】STC32
+ 【Target 】 keil5.2及以上
+ 【SYS PLL】 35MHz使用内部晶振，通过
+=================================================================
+stc-isp下载时, 选择时钟 35MHZ
+QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ
 
-使用例程的时候，建议采用没有空格的英文路径，
-除了CIF为TC264DA独有外，其它的代码兼容TC264D
-本库默认初始化了EMEM：512K，如果用户使用TC264D，注释掉EMEM_InitConfig()初始化函数。
-工程下\Libraries\iLLD\TC26B\Tricore\Cpu\CStart\IfxCpu_CStart0.c第164行左右。
+配合匿名地面站上位机
+
 QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ*/
 #include <LQ_UART.h>
-#include <stdint.h>
-
+#include "ANO_DT.h"
+#include <LQ_CCU6.h>
 
 //使用匿名4.3上位机协议
 /////////////////////////////////////////////////////////////////////////////////////
@@ -32,85 +30,138 @@ QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ*/
 #define BYTE2(dwTemp)       ( *( (char *)(&dwTemp) + 2) )     /*!< uint32_t 数据拆分 byte2  */
 #define BYTE3(dwTemp)       ( *( (char *)(&dwTemp) + 3) )     /*!< uint32_t 数据拆分 byte3  */
 
-/**  发送数据缓存 */
-unsigned char data_to_send[50];
+extern float multiple_error;
+unsigned char data_to_send[64];
 
-/*!
-  * @brief    Send_Data函数是协议中所有发送数据功能使用到的发送函数
-  *
-  * @param    dataToSend   :   要发送的数据首地址
-  * @param    length       :   要发送的数据长度
-  *
-  * @return   无
-  *
-  * @note     移植时，用户应根据自身应用的情况，根据使用的通信方式，实现此函数
-  *
-  * @see      内部调用
-  *
-  * @date     2019/5/28 星期二
-  */
-void ANO_DT_Send_Data(unsigned char *dataToSend , unsigned short length)
+void ANO_DT_Send_Data(unsigned char *dataToSend, unsigned short length)
 {
 
     /**使用串口正常发送数据，大概需要1.5ms*/
-	UART_PutBuff(UART0, dataToSend, length);     //可以修改不同的串口发送数据
+    UART_PutBuff(UART0, dataToSend, length);     //可以修改不同的串口发送数据
 
 }
 
-
-
-
-
-/*!
-  * @brief    向上位机发送发送8个int16_t数据
-  *
-  * @param    data1 - data8  ： 发送给上位机显示波形
-  *
-  * @return   无
-  *
-  * @note     无
-  *
-  * @see      ANO_DT_send_int16(1, 2, 3, 0, 0, 0, 0, 0);
-  *
-  * @date     2019/5/28 星期二
-  */
-void ANO_DT_send_int16(short data1, short data2, short data3, short data4, short data5, short data6, short data7, short data8 )
+/*LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+【函数名】void UART4_SendInt16(unsigned char Function, int outData)
+【功  能】匿名上位机用户协议，使用时占用MCU资源较大，跑车时不使用
+【参数值】unsigned char Function, 功能字符
+【参数值】int outData 数据
+【返回值】无
+【作  者】chiusir
+【最后更新】2021年1月22日
+【软件版本】V1.0
+QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ*/
+void UART4_SendInt16(unsigned char Function, int outData)
 {
+    unsigned char sum;
+    unsigned char outData_H = ((unsigned short)outData)>>8;
+    unsigned char outData_L = (unsigned char)outData;
+    unsigned char S4BUF;
+
+    S4BUF = (0xAA);   // 头
+    delayus(90);
+    S4BUF = (0xAA);   // 头
+    delayus(90);
+    S4BUF = Function; // 功能
+    delayus(90);
+    S4BUF = (0x02);   // 数据为两个字节
+    delayus(90);
+    S4BUF = outData_H;// 数据高8位
+    delayus(90);
+    S4BUF = outData_L;// 数据低8位
+    delayus(90);
+    sum = 0xAA | 0xAA | 0xF1 | 0x02 | outData_H | outData_L;// 校验值
+    S4BUF = sum;
+    delayus(90);
+}
+
+
+void ANO_DT_send_int16byte16(short data1, short data2, short data3, short data4, short data5, short data6, short data7, short data8 )
+{
+//  unsigned char  _cnt=0;
+//  unsigned char  sum = 0, i = 0;
+//
+//  data_to_send[_cnt++] = 0xAA;      //匿名协议帧头  0xAAAA
+//  data_to_send[_cnt++] = 0xAA;
+//  data_to_send[_cnt++] = 0xF1;      //使用用户协议帧0xF1
+//  data_to_send[_cnt++] = 16;        //8个int16_t 长度 16个字节
+//
+//  data_to_send[_cnt++]=(unsigned short)(data1>>8);
+//  data_to_send[_cnt++]=(unsigned char)(data1);
+//
+//  data_to_send[_cnt++]=(unsigned short)(data2>>8);
+//  data_to_send[_cnt++]=(unsigned char)(data2);
+//
+//  data_to_send[_cnt++]=(unsigned short)(data3>>8);
+//  data_to_send[_cnt++]=(unsigned char)(data3);
+//
+//  data_to_send[_cnt++]=(unsigned short)(data4>>8);
+//  data_to_send[_cnt++]=(unsigned char)(data4);
+//
+//  data_to_send[_cnt++]=(unsigned short)(data5>>8);
+//  data_to_send[_cnt++]=(unsigned char)(data5);
+//
+//  data_to_send[_cnt++]=(unsigned short)(data6>>8);
+//  data_to_send[_cnt++]=(unsigned char)(data6);
+//
+//  data_to_send[_cnt++]=(unsigned short)(data7>>8);
+//  data_to_send[_cnt++]=(unsigned char)(data7);
+//
+//  data_to_send[_cnt++]=(unsigned short)(data8>>8);
+//  data_to_send[_cnt++]=(unsigned char)(data8);
+//
+//  sum = 0;
+//  for(i=0;i<_cnt;i++)
+//    sum += data_to_send[i];
+//  data_to_send[_cnt++]=sum;
+//
+//  UART4_PutStr(data_to_send);     //可以修改不同的串口发送数据;
+
+
     unsigned char  _cnt=0;
-	unsigned char  sum = 0, i = 0;
+    unsigned char  sum = 0, i = 0,add=0;
+
     data_to_send[_cnt++] = 0xAA;      //匿名协议帧头  0xAAAA
-	data_to_send[_cnt++] = 0xAA;
-	data_to_send[_cnt++] = 0xF1;      //使用用户协议帧0xF1
+    data_to_send[_cnt++] = 0xFF;
+    data_to_send[_cnt++] = 0xF1;      //使用用户协议帧0xF1
     data_to_send[_cnt++] = 16;        //8个int16_t 长度 16个字节
 
-	data_to_send[_cnt++]=BYTE1(data1);
-	data_to_send[_cnt++]=BYTE0(data1);
+    data_to_send[_cnt++]=BYTE0(data1);
+    data_to_send[_cnt++]=BYTE1(data1);
 
-	data_to_send[_cnt++]=BYTE1(data2);
-	data_to_send[_cnt++]=BYTE0(data2);
+    data_to_send[_cnt++]=BYTE0(data2);
+    data_to_send[_cnt++]=BYTE1(data2);
 
-	data_to_send[_cnt++]=BYTE1(data3);
-	data_to_send[_cnt++]=BYTE0(data3);
+    data_to_send[_cnt++]=BYTE0(data3);
+    data_to_send[_cnt++]=BYTE1(data3);
 
+    data_to_send[_cnt++]=BYTE0(data4);
     data_to_send[_cnt++]=BYTE1(data4);
-	data_to_send[_cnt++]=BYTE0(data4);
 
-	data_to_send[_cnt++]=BYTE1(data5);
-	data_to_send[_cnt++]=BYTE0(data5);
+    data_to_send[_cnt++]=BYTE0(data5);
+    data_to_send[_cnt++]=BYTE1(data5);
 
-	data_to_send[_cnt++]=BYTE1(data6);
-	data_to_send[_cnt++]=BYTE0(data6);
+    data_to_send[_cnt++]=BYTE0(data6);
+    data_to_send[_cnt++]=BYTE1(data6);
 
+    data_to_send[_cnt++]=BYTE0(data7);
     data_to_send[_cnt++]=BYTE1(data7);
-	data_to_send[_cnt++]=BYTE0(data7);
 
-	data_to_send[_cnt++]=BYTE1(data8);
-	data_to_send[_cnt++]=BYTE0(data8);
+    data_to_send[_cnt++]=BYTE0(data8);
+    data_to_send[_cnt++]=BYTE1(data8);
 
     sum = 0;
-	for(i=0;i<_cnt;i++)
-		sum += data_to_send[i];
-	data_to_send[_cnt++]=sum;
+    add = 0;
+//    for(i=0; i<_cnt; i++)
+//        sum += data_to_send[i];
 
-	ANO_DT_Send_Data(data_to_send, _cnt);
+    for(i=0; i<_cnt; i++)
+    {
+        sum += data_to_send[i];
+        add += sum;
+    }
+    data_to_send[_cnt++]=sum;
+    data_to_send[_cnt++]=add;
+
+    ANO_DT_Send_Data(data_to_send,_cnt);
 }

@@ -1,89 +1,89 @@
 /*LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
-¡¾Æ½    Ì¨¡¿±±¾©ÁúÇñÖÇÄÜ¿Æ¼¼TC264DAºËĞÄ°å
-¡¾±à    Ğ´¡¿chiusir
-¡¾E-mail¡¿chiusir@163.com
-¡¾Èí¼ş°æ±¾¡¿V1.1 °æÈ¨ËùÓĞ£¬µ¥Î»Ê¹ÓÃÇëÏÈÁªÏµÊÚÈ¨
-¡¾×îºó¸üĞÂ¡¿2020Äê10ÔÂ28ÈÕ
-¡¾Ïà¹ØĞÅÏ¢²Î¿¼ÏÂÁĞµØÖ·¡¿
-¡¾Íø    Õ¾¡¿http://www.lqist.cn
-¡¾ÌÔ±¦µêÆÌ¡¿http://longqiu.taobao.com
+ã€å¹³    å°ã€‘åŒ—äº¬é¾™é‚±æ™ºèƒ½ç§‘æŠ€TC264DAæ ¸å¿ƒæ¿
+ã€ç¼–    å†™ã€‘chiusir
+ã€E-mailã€‘chiusir@163.com
+ã€è½¯ä»¶ç‰ˆæœ¬ã€‘V1.1 ç‰ˆæƒæ‰€æœ‰ï¼Œå•ä½ä½¿ç”¨è¯·å…ˆè”ç³»æˆæƒ
+ã€æœ€åæ›´æ–°ã€‘2020å¹´10æœˆ28æ—¥
+ã€ç›¸å…³ä¿¡æ¯å‚è€ƒä¸‹åˆ—åœ°å€ã€‘
+ã€ç½‘    ç«™ã€‘http://www.lqist.cn
+ã€æ·˜å®åº—é“ºã€‘http://longqiu.taobao.com
 ------------------------------------------------
-¡¾dev.env.¡¿AURIX Development Studio1.2.2¼°ÒÔÉÏ°æ±¾
-¡¾Target ¡¿ TC264DA/TC264D
-¡¾Crystal¡¿ 20.000Mhz
-¡¾SYS PLL¡¿ 200MHz
+ã€dev.env.ã€‘AURIX Development Studio1.2.2åŠä»¥ä¸Šç‰ˆæœ¬
+ã€Target ã€‘ TC264DA/TC264D
+ã€Crystalã€‘ 20.000Mhz
+ã€SYS PLLã€‘ 200MHz
 ________________________________________________________________
-»ùÓÚiLLD_1_0_1_11_0µ×²ã³ÌĞò,
+åŸºäºiLLD_1_0_1_11_0åº•å±‚ç¨‹åº,
 
-Ê¹ÓÃÀı³ÌµÄÊ±ºò£¬½¨Òé²ÉÓÃÃ»ÓĞ¿Õ¸ñµÄÓ¢ÎÄÂ·¾¶£¬
-³ıÁËCIFÎªTC264DA¶ÀÓĞÍâ£¬ÆäËüµÄ´úÂë¼æÈİTC264D
-±¾¿âÄ¬ÈÏ³õÊ¼»¯ÁËEMEM£º512K£¬Èç¹ûÓÃ»§Ê¹ÓÃTC264D£¬×¢ÊÍµôEMEM_InitConfig()³õÊ¼»¯º¯Êı¡£
-¹¤³ÌÏÂ\Libraries\iLLD\TC26B\Tricore\Cpu\CStart\IfxCpu_CStart0.cµÚ164ĞĞ×óÓÒ¡£
+ä½¿ç”¨ä¾‹ç¨‹çš„æ—¶å€™ï¼Œå»ºè®®é‡‡ç”¨æ²¡æœ‰ç©ºæ ¼çš„è‹±æ–‡è·¯å¾„ï¼Œ
+é™¤äº†CIFä¸ºTC264DAç‹¬æœ‰å¤–ï¼Œå…¶å®ƒçš„ä»£ç å…¼å®¹TC264D
+æœ¬åº“é»˜è®¤åˆå§‹åŒ–äº†EMEMï¼š512Kï¼Œå¦‚æœç”¨æˆ·ä½¿ç”¨TC264Dï¼Œæ³¨é‡Šæ‰EMEM_InitConfig()åˆå§‹åŒ–å‡½æ•°ã€‚
+å·¥ç¨‹ä¸‹\Libraries\iLLD\TC26B\Tricore\Cpu\CStart\IfxCpu_CStart0.cç¬¬164è¡Œå·¦å³ã€‚
 =================================================================
-³ÌĞòÅäÌ×ÊÓÆµµØÖ·£ºhttps://space.bilibili.com/95313236
+ç¨‹åºé…å¥—è§†é¢‘åœ°å€ï¼šhttps://space.bilibili.com/95313236
 =================================================================
-ÉãÏñÍ·½Ó¿Ú                  ÁúÇñÉñÑÛ»òÕßOV7725Ä£¿é
-¡ñ Êı¾İ¶Ë¿Ú£ºP02.0-P02.7¿Ú£¬¹²8Î»£¬½ÓÉãÏñÍ·µÄÊı¾İ¶Ë¿Ú£»
-¡ñ Ê±ÖÓÏñËØ£ºÍâ²¿ÖĞ¶ÏµÚ0×é£ºP00_4£»
-¡ñ ³¡ĞÅºÅ£º    Íâ²¿ÖĞ¶ÏµÚ3×é£ºP15_1£»
+æ‘„åƒå¤´æ¥å£                  é¾™é‚±ç¥çœ¼æˆ–è€…OV7725æ¨¡å—
+â— æ•°æ®ç«¯å£ï¼šP02.0-P02.7å£ï¼Œå…±8ä½ï¼Œæ¥æ‘„åƒå¤´çš„æ•°æ®ç«¯å£ï¼›
+â— æ—¶é’Ÿåƒç´ ï¼šå¤–éƒ¨ä¸­æ–­ç¬¬0ç»„ï¼šP00_4ï¼›
+â— åœºä¿¡å·ï¼š    å¤–éƒ¨ä¸­æ–­ç¬¬3ç»„ï¼šP15_1ï¼›
 -----------------------------------------------------------------
-ÍÆ¼öGPT12Ä£¿é£¬¹²¿ÉÒÔÊµÏÖ5Â·Õı½»½âÂëÔöÁ¿±àÂëÆ÷£¨¼æÈİ´ø·½Ïò±àÂëÆ÷£©ĞÅºÅ²É¼¯£¬ÈÎÒâÑ¡ÔñËÄÂ·¼´¿É£»
-P33_7, P33_6   ÁúÇñTCÄ¸°å±àÂëÆ÷1
-P02_8, P33_5   ÁúÇñTCÄ¸°å±àÂëÆ÷2
-P10_3, P10_1   ÁúÇñTCÄ¸°å±àÂëÆ÷3
-P20_3, P20_0   ÁúÇñTCÄ¸°å±àÂëÆ÷4
+æ¨èGPT12æ¨¡å—ï¼Œå…±å¯ä»¥å®ç°5è·¯æ­£äº¤è§£ç å¢é‡ç¼–ç å™¨ï¼ˆå…¼å®¹å¸¦æ–¹å‘ç¼–ç å™¨ï¼‰ä¿¡å·é‡‡é›†ï¼Œä»»æ„é€‰æ‹©å››è·¯å³å¯ï¼›
+P33_7, P33_6   é¾™é‚±TCæ¯æ¿ç¼–ç å™¨1
+P02_8, P33_5   é¾™é‚±TCæ¯æ¿ç¼–ç å™¨2
+P10_3, P10_1   é¾™é‚±TCæ¯æ¿ç¼–ç å™¨3
+P20_3, P20_0   é¾™é‚±TCæ¯æ¿ç¼–ç å™¨4
 -----------------------------------------------------------------
-µç¸ĞµçÑ¹²É¼¯Ä£¿é»òÕßÂó¿Ë·çÄ£¿é
-ÍÆ¼öÊ¹ÓÃAN0-7£¬¹²°ËÂ·ADC£¬¿ÉÒÔÂú×ãchirpÉùÒôĞÅºÅ¼°µç´Å³µµç¸ĞµçÑ¹²É¼¯£»
-AN0-3          ÁúÇñTC½ÓËÄ¸öÂó¿Ë·çÄ£¿é»òÕßµç¸Ğ
+ç”µæ„Ÿç”µå‹é‡‡é›†æ¨¡å—æˆ–è€…éº¦å…‹é£æ¨¡å—
+æ¨èä½¿ç”¨AN0-7ï¼Œå…±å…«è·¯ADCï¼Œå¯ä»¥æ»¡è¶³chirpå£°éŸ³ä¿¡å·åŠç”µç£è½¦ç”µæ„Ÿç”µå‹é‡‡é›†ï¼›
+AN0-3          é¾™é‚±TCæ¥å››ä¸ªéº¦å…‹é£æ¨¡å—æˆ–è€…ç”µæ„Ÿ
 -----------------------------------------------------------------
-Ä¬ÈÏµç»ú½Ó¿Ú
-Ê¹ÓÃGTMÄ£¿é£¬ATOMËÄ¸öÍ¨µÀ¿É²úÉú4*8¹²32Â·PWM£¬¶øÇÒ¸÷×ÔÆµÂÊºÍÕ¼¿Õ±È¿Éµ÷£¬ÍÆ¼öÊ¹ÓÃATOM0µÄ0-7Í¨µÀ£»
-µÚÒ»×éË«Â·È«ÇÅÇı¶¯
-P23_1         ÁúÇñTCÄ¸°åMOTOR1_P
-P32_4         ÁúÇñTCÄ¸°åMOTOR1_N
-P21_2         ÁúÇñTCÄ¸°åMOTOR2_P
-P22_3         ÁúÇñTCÄ¸°åMOTOR2_N
-µÚ¶ş×éË«Â·È«ÇÅÇı¶¯
-P21_4         ÁúÇñTCÄ¸°åMOTOR3_P
-P21_3         ÁúÇñTCÄ¸°åMOTOR3_N
-P20_8         ÁúÇñTCÄ¸°åMOTOR4_P
-P21_5         ÁúÇñTCÄ¸°åMOTOR4_N
+é»˜è®¤ç”µæœºæ¥å£
+ä½¿ç”¨GTMæ¨¡å—ï¼ŒATOMå››ä¸ªé€šé“å¯äº§ç”Ÿ4*8å…±32è·¯PWMï¼Œè€Œä¸”å„è‡ªé¢‘ç‡å’Œå ç©ºæ¯”å¯è°ƒï¼Œæ¨èä½¿ç”¨ATOM0çš„0-7é€šé“ï¼›
+ç¬¬ä¸€ç»„åŒè·¯å…¨æ¡¥é©±åŠ¨
+P23_1         é¾™é‚±TCæ¯æ¿MOTOR1_P
+P32_4         é¾™é‚±TCæ¯æ¿MOTOR1_N
+P21_2         é¾™é‚±TCæ¯æ¿MOTOR2_P
+P22_3         é¾™é‚±TCæ¯æ¿MOTOR2_N
+ç¬¬äºŒç»„åŒè·¯å…¨æ¡¥é©±åŠ¨
+P21_4         é¾™é‚±TCæ¯æ¿MOTOR3_P
+P21_3         é¾™é‚±TCæ¯æ¿MOTOR3_N
+P20_8         é¾™é‚±TCæ¯æ¿MOTOR4_P
+P21_5         é¾™é‚±TCæ¯æ¿MOTOR4_N
 -----------------------------------------------------------------
-Ä¬ÈÏ¶æ»ú½Ó¿Ú
-Ê¹ÓÃGTMÄ£¿é£¬ATOMËÄ¸öÍ¨µÀ¿É²úÉú4*8¹²32Â·PWM£¬¶øÇÒ¸÷×ÔÆµÂÊºÍÕ¼¿Õ±È¿Éµ÷£¬ÍÆ¼öÊ¹ÓÃATOM2£»
-P33_10        ÁúÇñTCÄ¸°å¶æ»ú1
-P33_13        ÁúÇñTCÄ¸°å¶æ»ú2
+é»˜è®¤èˆµæœºæ¥å£
+ä½¿ç”¨GTMæ¨¡å—ï¼ŒATOMå››ä¸ªé€šé“å¯äº§ç”Ÿ4*8å…±32è·¯PWMï¼Œè€Œä¸”å„è‡ªé¢‘ç‡å’Œå ç©ºæ¯”å¯è°ƒï¼Œæ¨èä½¿ç”¨ATOM2ï¼›
+P33_10        é¾™é‚±TCæ¯æ¿èˆµæœº1
+P33_13        é¾™é‚±TCæ¯æ¿èˆµæœº2
 -----------------------------------------------------------------
- Ä¬ÈÏÆÁÄ»ÏÔÊ¾½Ó¿Ú£¬ÓÃ»§¿ÉÒÔÊ¹ÓÃTFT»òÕßOLEDÄ£¿é
-TFTSPI_CS     P20_14     ÁúÇñTCÄ¸°å CS¹Ü½Å Ä¬ÈÏÀ­µÍ£¬¿ÉÒÔ²»ÓÃ
-TFTSPI_SCK    P20_11     ÁúÇñTCÄ¸°å SPI SCK¹Ü½Å
-TFTSPI_SDI    P20_10     ÁúÇñTCÄ¸°å SPI MOSI¹Ü½Å
-TFTSPI_DC     P20_12     ÁúÇñTCÄ¸°å D/C¹Ü½Å
-TFTSPI_RST    P20_13     ÁúÇñTCÄ¸°å RESET¹Ü½Å
+ é»˜è®¤å±å¹•æ˜¾ç¤ºæ¥å£ï¼Œç”¨æˆ·å¯ä»¥ä½¿ç”¨TFTæˆ–è€…OLEDæ¨¡å—
+TFTSPI_CS     P20_14     é¾™é‚±TCæ¯æ¿ CSç®¡è„š é»˜è®¤æ‹‰ä½ï¼Œå¯ä»¥ä¸ç”¨
+TFTSPI_SCK    P20_11     é¾™é‚±TCæ¯æ¿ SPI SCKç®¡è„š
+TFTSPI_SDI    P20_10     é¾™é‚±TCæ¯æ¿ SPI MOSIç®¡è„š
+TFTSPI_DC     P20_12     é¾™é‚±TCæ¯æ¿ D/Cç®¡è„š
+TFTSPI_RST    P20_13     é¾™é‚±TCæ¯æ¿ RESETç®¡è„š
 -----------------------------------------------------------------
-OLED_CK       P20_14     ÁúÇñTCÄ¸°åOLED CK¹Ü½Å
-OLED_DI       P20_11     ÁúÇñTCÄ¸°åOLED DI¹Ü½Å
-OLED_RST      P20_10     ÁúÇñTCÄ¸°åOLED RST¹Ü½Å
-OLED_DC       P20_12     ÁúÇñTCÄ¸°åOLED DC¹Ü½Å
-OLED_CS       P20_13     ÁúÇñTCÄ¸°åOLED CS¹Ü½Å Ä¬ÈÏÀ­µÍ£¬¿ÉÒÔ²»ÓÃ
+OLED_CK       P20_14     é¾™é‚±TCæ¯æ¿OLED CKç®¡è„š
+OLED_DI       P20_11     é¾™é‚±TCæ¯æ¿OLED DIç®¡è„š
+OLED_RST      P20_10     é¾™é‚±TCæ¯æ¿OLED RSTç®¡è„š
+OLED_DC       P20_12     é¾™é‚±TCæ¯æ¿OLED DCç®¡è„š
+OLED_CS       P20_13     é¾™é‚±TCæ¯æ¿OLED CSç®¡è„š é»˜è®¤æ‹‰ä½ï¼Œå¯ä»¥ä¸ç”¨
 ----------------------------------------------------------------
-Ä¬ÈÏ°´¼ü½Ó¿Ú
-KEY0p         P22_0      ÁúÇñTCÄ¸°åÉÏ°´¼ü0
-KEY1p         P22_1      ÁúÇñTCÄ¸°åÉÏ°´¼ü1
-KEY2p         P22_2      ÁúÇñTCÄ¸°åÉÏ°´¼ü2
-DSW0p         P33_9      ÁúÇñTCÄ¸°åÉÏ²¦Âë¿ª¹Ø0
-DSW1p         P33_11     ÁúÇñTCÄ¸°åÉÏ²¦Âë¿ª¹Ø1
+é»˜è®¤æŒ‰é”®æ¥å£
+KEY0p         P22_0      é¾™é‚±TCæ¯æ¿ä¸ŠæŒ‰é”®0
+KEY1p         P22_1      é¾™é‚±TCæ¯æ¿ä¸ŠæŒ‰é”®1
+KEY2p         P22_2      é¾™é‚±TCæ¯æ¿ä¸ŠæŒ‰é”®2
+DSW0p         P33_9      é¾™é‚±TCæ¯æ¿ä¸Šæ‹¨ç å¼€å…³0
+DSW1p         P33_11     é¾™é‚±TCæ¯æ¿ä¸Šæ‹¨ç å¼€å…³1
 -----------------------------------------------------------------
-Ä¬ÈÏLED½Ó¿Ú
-LED0p         P10_6      ÁúÇñTCÄ¸°åºËĞÄ°åÉÏLED0 ´äÂÌ
-LED1p         P10_5      ÁúÇñTCÄ¸°åºËĞÄ°åÉÏLED1 À¶µÆ
-LED2p         P20_6      ÁúÇñTCÄ¸°åÉÏLED0
-LED3p         P20_7      ÁúÇñTCÄ¸°åÉÏLED1
+é»˜è®¤LEDæ¥å£
+LED0p         P10_6      é¾™é‚±TCæ¯æ¿æ ¸å¿ƒæ¿ä¸ŠLED0 ç¿ ç»¿
+LED1p         P10_5      é¾™é‚±TCæ¯æ¿æ ¸å¿ƒæ¿ä¸ŠLED1 è“ç¯
+LED2p         P20_6      é¾™é‚±TCæ¯æ¿ä¸ŠLED0
+LED3p         P20_7      é¾™é‚±TCæ¯æ¿ä¸ŠLED1
 -----------------------------------------------------------------
-¶¨Ê±Æ÷
-ÓĞÁ½¸öCCU6Ä£¿é  Ã¿¸öÄ£¿éÓĞÁ½¸ö¶ÀÁ¢¶¨Ê±Æ÷  ´¥·¢¶¨Ê±Æ÷ÖĞ¶Ï
-ÍÆ¼öÊ¹ÓÃCCU6Ä£¿é£¬STMÓÃ×÷ÏµÍ³Ê±ÖÓ»òÕßÑÓÊ±£»
+å®šæ—¶å™¨
+æœ‰ä¸¤ä¸ªCCU6æ¨¡å—  æ¯ä¸ªæ¨¡å—æœ‰ä¸¤ä¸ªç‹¬ç«‹å®šæ—¶å™¨  è§¦å‘å®šæ—¶å™¨ä¸­æ–­
+æ¨èä½¿ç”¨CCU6æ¨¡å—ï¼ŒSTMç”¨ä½œç³»ç»Ÿæ—¶é’Ÿæˆ–è€…å»¶æ—¶ï¼›
 QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ*/
 
 #include <IfxCpu.h>
@@ -103,16 +103,17 @@ QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ*/
 #include <stdio.h>
 #include <LQ_ADC.h>
 
-// ¶¨Ê±Æ÷ 5msºÍ50ms±êÖ¾Î»
+
+// å®šæ—¶å™¨ 5mså’Œ50msæ ‡å¿—ä½
 volatile uint8 cpu1Flage5ms = 0;
 volatile uint8 cpu1Flage50ms = 0;
 
-// ÆÚÍûËÙ¶È
+// æœŸæœ›é€Ÿåº¦
 volatile sint16 targetSpeed = 10;
 
 struct pid_param_t
 {
-    float kp;    //P¼ÇµÃ·ùÖµ
+    float kp;    //Pè®°å¾—å¹…å€¼
     float ki;    //I
     float kd;    //D
     float i_max; //integrator_max
@@ -138,57 +139,473 @@ struct CORNER
     int corner_icount;
 };
 extern struct CORNER Lc, Rc, uLc, uRc;
-// ±ÜÕÏ±êÖ¾Î»
+// é¿éšœæ ‡å¿—ä½
 volatile uint8 evadibleFlage = 0;
 extern  unsigned char output[LCDH][LCDW];
 extern  unsigned char ooutput[LCDH][LCDW];
+extern  unsigned char output2[LCDH][LCDW];
+extern  unsigned char ooutput2[LCDH][LCDW];
+extern int min_element[3];
 extern struct pid_param_t pama;
 extern float KP_motor;extern float KI_motor;extern float KD_motor;
-extern int t_state;
+
+
 extern int RIGHT_EDGE_type;
 extern int LEFT_EDGE_type;
+
+
+
+extern unsigned short L_Threshold;
 extern float K_MD;
+extern unsigned short distc;
 extern int time;
 extern int inelement;
+extern int lb_ra;
+extern int lb_la;
 extern int ti;
+extern float Yaw,Pitch,Roll;
 int e1max=0;
 int e2max=0;
+extern int zdcd;
+extern int duty1,duty2;
+
+extern int tezheng[9];
+struct running_pama
+{
+        int enable_csdjc;// chu sai dao jian ce
+        int enable_jays;//jin ai yuan su
+        int enable_jawd;//jin ai wan dao
+        int speed_set;//sudushezhi
+        int chasu_set;//chasushezhi
+        int kmd_mod;//KMDmoshi
+        int ckfx;//chukufangxiang
+        int rucs;//dijicikandaobanmaxianruku
+        int enable_lty;
+        int pdspeed;
+
+};
+
+extern struct running_pama pama_run;
+
 int core1_main (void)
 {
+
     delayms(300);
 
-    // ¿ªÆôCPU×ÜÖĞ¶Ï
+    // Â¿ÂªÃ†Ã´CPUÃ—ÃœÃ–ÃÂ¶Ã
     IfxCpu_enableInterrupts();
 
-    // ¹Ø±Õ¿´ÃÅ¹·
+    // Â¹Ã˜Â±Ã•Â¿Â´ÃƒÃ…Â¹Â·
     IfxScuWdt_disableCpuWatchdog (IfxScuWdt_getCpuWatchdogPassword ());
 
-    // µÈ´ıCPU0 ³õÊ¼»¯Íê³É
+    // ÂµÃˆÂ´Ã½CPU0 Â³ÃµÃŠÂ¼Â»Â¯ÃÃªÂ³Ã‰
     while(!IfxCpu_acquireMutex(&mutexCpu0InitIsOk));
-    //µç¸Ğ¼°µç³ØµçÑ¹ ADC²É¼¯³õÊ¼»¯
-       ADC_InitConfig(ADC7, 80000);//³õÊ¼»¯   Èç¹ûÊ¹ÓÃÁúÇñÄ¸°å  Ôò²â·ÖÑ¹ºóµÄµç³ØµçÑ¹£¬¾ßÌå¿ÉÒÔ¿´Ä¸°åÔ­ÀíÍ¼
-    // ÇĞ¼ÇCPU0,CPU1...²»¿ÉÒÔÍ¬Ê±¿ªÆôÆÁÄ»ÏÔÊ¾£¬·ñÔò³åÍ»²»ÏÔÊ¾
-    mutexCpu0TFTIsOk=1;         // CPU1£º 0Õ¼ÓÃ/1ÊÍ·Å TFT
-    /* µç»ú¡¢¶æ»ú£¬±àÂëÆ÷³õÊ¼»¯ */
-       MotorInit();    // µç»ú
-       ServoInit();    // ¶æ»ú
-       EncInit();  // ±àÂëÆ÷
+    //ÂµÃ§Â¸ÃÂ¼Â°ÂµÃ§Â³Ã˜ÂµÃ§Ã‘Â¹ ADCÂ²Ã‰Â¼Â¯Â³ÃµÃŠÂ¼Â»Â¯
+       ADC_InitConfig(ADC7, 80000);//Â³ÃµÃŠÂ¼Â»Â¯   ÃˆÃ§Â¹Ã»ÃŠÂ¹Ã“ÃƒÃÃºÃ‡Ã±Ã„Â¸Â°Ã¥  Ã”Ã²Â²Ã¢Â·Ã–Ã‘Â¹ÂºÃ³ÂµÃ„ÂµÃ§Â³Ã˜ÂµÃ§Ã‘Â¹Â£Â¬Â¾ÃŸÃŒÃ¥Â¿Ã‰Ã’Ã”Â¿Â´Ã„Â¸Â°Ã¥Ã”Â­Ã€Ã­ÃÂ¼
+    // Ã‡ÃÂ¼Ã‡CPU0,CPU1...Â²Â»Â¿Ã‰Ã’Ã”ÃÂ¬ÃŠÂ±Â¿ÂªÃ†Ã´Ã†ÃÃ„Â»ÃÃ”ÃŠÂ¾Â£Â¬Â·Ã±Ã”Ã²Â³Ã¥ÃÂ»Â²Â»ÃÃ”ÃŠÂ¾
+    mutexCpu0TFTIsOk=1;         // CPU1Â£Âº 0Ã•Â¼Ã“Ãƒ/1ÃŠÃÂ·Ã… TFT
+    /* ÂµÃ§Â»ÃºÂ¡Â¢Â¶Ã¦Â»ÃºÂ£Â¬Â±Ã Ã‚Ã«Ã†Ã·Â³ÃµÃŠÂ¼Â»Â¯ */
+       MotorInit();    // ÂµÃ§Â»Ãº
+       ServoInit();    // Â¶Ã¦Â»Ãº
+       EncInit();  // Â±Ã Ã‚Ã«Ã†Ã·
+       //TestServo();
+    // Â¶Â¨ÃŠÂ±Ã†Ã·Â³ÃµÃŠÂ¼Â»Â¯,Ã”Â­ÃŠÂ¼Ã–ÃÂ¶ÃÂºÂ¯ÃŠÃ½Ã”ÃšCCU6.CÃ–Ã */
+       CCU6_InitConfig(CCU61, CCU6_Channel0, 5000);// 5ms
+    //Test_CAMERA();         //PASS,Â²Ã¢ÃŠÃ”ÃÃºÃ‡Ã±Ã‰Ã±Ã‘Ã›Ã‰Ã£ÃÃ±ÃÂ·Â²Â¢Ã”ÃšÃ†ÃÃ„Â»Ã‰ÃÃÃ”ÃŠÂ¾  LQ_CAMERA.h Ã–ÃÃ‘Â¡Ã”Ã±Ã†ÃÃ„Â»
+    TFTSPI_Init(0);               // TFT1.8Â³ÃµÃŠÂ¼Â»Â¯0:ÂºÃ¡Ã†Ã  1Â£ÂºÃŠÃºÃ†Ã
+    TFTSPI_CLS(u16BLACK);         // Ã‡Ã¥Ã†Ã
 
 
-    // ¶¨Ê±Æ÷³õÊ¼»¯,Ô­Ê¼ÖĞ¶Ïº¯ÊıÔÚCCU6.CÖĞ */
-    CCU6_InitConfig(CCU61, CCU6_Channel0, 5000);// 5ms
-    //Test_CAMERA();         //PASS,²âÊÔÁúÇñÉñÑÛÉãÏñÍ·²¢ÔÚÆÁÄ»ÉÏÏÔÊ¾  LQ_CAMERA.h ÖĞÑ¡ÔñÆÁÄ»
-    TFTSPI_Init(0);               // TFT1.8³õÊ¼»¯0:ºáÆÁ  1£ºÊúÆÁ
-    TFTSPI_CLS(u16BLACK);         // ÇåÆÁ
     unsigned char oot[LCDH][LCDW];
+    unsigned char oott[60][94];
     UART_InitConfig(UART0_RX_P14_1, UART0_TX_P14_0, 115200);
     //int lccr,rccr,lcco,rcco,la,ra;
     struct CORNER dLc,dRc,duLc,duRc;
     //while(1)
 
-    while(1)//Ö÷Ñ­»·
+
+    //menu
+    char menu[5][30]={
+            "pama_run_set",
+            "basic_pid",
+            "show_carema",
+            "run_gogog!!",
+            "quick_gogogo"
+    };
+    char page_0[12][30]={
+            "enable_csdjc",
+            "enable_jays",
+            "enable_jawd",
+            "speed_set",
+            "chasu_set",
+            "kmd_mod",
+            "ckfx",
+            "rucs",
+            "enable_lty",
+            "pdspeed"
+    };
+    char page_1[12][30]={
+            "kp mt",
+            "ki mt",
+            "kd mt",
+            "kp smt",
+            "ki smt",
+            "kd smt"
+    };
+    int page_cj=0;//yemiancengji
+    int select_xx=0;//dijigexuanxiang
+    int sfxz=0;//shifouxuanzhong
+
+    int page_num[3]={5,10,6};
+
+    int pama_run_tidai[15];
+    pama_run_tidai[0]=pama_run.enable_csdjc;
+    pama_run_tidai[1]=pama_run.enable_jays;
+    pama_run_tidai[2]=pama_run.enable_jawd;
+    pama_run_tidai[3]=pama_run.speed_set;
+    pama_run_tidai[4]=pama_run.chasu_set;//fanleyibaibei
+    pama_run_tidai[5]=pama_run.kmd_mod;
+    pama_run_tidai[6]=pama_run.ckfx;
+    pama_run_tidai[7]=pama_run.rucs;
+    pama_run_tidai[8]=pama_run.enable_lty;
+    pama_run_tidai[9]=pama_run.pdspeed;
+
+    float pid_tidai[6];
+    pid_tidai[0] = KP_motor;
+    pid_tidai[1] = KI_motor;
+    pid_tidai[2] = KD_motor;
+    pid_tidai[3] = pama.kp;      // Pè®°å¾—å¹…å€¼
+    pid_tidai[4] = pama.ki;       // I
+    pid_tidai[5] = pama.kd;
+
+
+    int pama_run_zengjian[15]={1,1,1,50,1,1,1,1,1,50};
+    int pama_run_yuzhi[15]={2,2,2,-1,-1,-1,3,-1,2,-1};
+
+    float pid_zengjian[6]={1,0.1,0.1,10,10,10};
+    extern int waiting_cpu1;
+    while(waiting_cpu1==1)
     {
-        // ÇĞ¼ÇCPU0,CPU1...²»¿ÉÒÔÍ¬Ê±¿ªÆôÆÁÄ»ÏÔÊ¾£¬·ñÔò³åÍ»²»ÏÔÊ¾
+        TFTSPI_P6X8Str(1, 0, "to my dear son -- ftl", u16WHITE, u16BLACK);
+        if(page_cj==0)
+        {
+            int i;
+            for(i=0;i<page_num[0];i++)
+            {
+                if(i==select_xx)
+                    TFTSPI_P6X8Str(1, 1+i, menu[i], u16BLACK, u16WHITE);
+                else
+                    TFTSPI_P6X8Str(1, 1+i, menu[i], u16WHITE, u16BLACK);
+            }
+
+
+
+            if(KEY_Read(KEY0)==0)//æŒ‰ä¸‹KEY0é”®ï¼Œ
+            {
+                select_xx--;
+                delayms(200);
+            }
+            if(KEY_Read(KEY1)==0)//æŒ‰ä¸‹KEY1é”®ï¼Œ
+            {
+                select_xx++;
+                delayms(200);
+            }
+            if(KEY_Read(KEY2)==0)//æŒ‰ä¸‹KEY2é”®ï¼Œ
+            {
+                page_cj=select_xx+1;
+                select_xx=0;
+                TFTSPI_CLS(u16BLACK);
+                delayms(200);
+            }
+            select_xx=(select_xx+page_num[0])%page_num[0];
+
+
+
+
+            //if(KEY_Read(KEY0)==0|| KEY_Read(KEY1)==0||KEY_Read(KEY2)==0)
+            //    delayms(200);
+
+
+        }
+
+        if(page_cj==1)
+        {
+            int i;
+            for(i=0;i<page_num[1];i++)
+            {
+                if(i==select_xx&&sfxz==0)
+                    TFTSPI_P6X8Str(1, 1+i, page_0[i], u16BLACK, u16WHITE);
+                else if(i==select_xx&&sfxz==1)
+                    TFTSPI_P6X8Str(1, 1+i, page_0[i], u16WHITE, u16BLUE);
+                else
+                    TFTSPI_P6X8Str(1, 1+i, page_0[i], u16WHITE, u16BLACK);
+            }
+            for(i=0;i<page_num[1];i++)
+            {
+                char txt[20];
+                sprintf(txt,"%4d", pama_run_tidai[i]);
+                if(i==select_xx&&sfxz==0)
+                    TFTSPI_P6X8Str(16, 1+i, txt, u16BLACK, u16WHITE);
+                else if(i==select_xx&&sfxz==1)
+                    TFTSPI_P6X8Str(16, 1+i, txt, u16WHITE, u16BLUE);
+                else
+                    TFTSPI_P6X8Str(16, 1+i, txt, u16WHITE, u16BLACK);
+            }
+
+
+
+            if(sfxz==1)
+            {
+                if(KEY_Read(KEY0)==0)//æŒ‰ä¸‹KEY0é”®ï¼Œ
+                {
+                    pama_run_tidai[select_xx]+=pama_run_zengjian[select_xx];
+                    delayms(200);
+                }
+                if(KEY_Read(KEY1)==0)//æŒ‰ä¸‹KEY1é”®ï¼Œ
+                {
+                    pama_run_tidai[select_xx]-=pama_run_zengjian[select_xx];
+                    delayms(200);
+                }
+                if(KEY_Read(KEY2)==0)//æŒ‰ä¸‹KEY2é”®ï¼Œ
+                {
+                    sfxz=1-sfxz;
+                    delayms(200);
+                }
+                if(pama_run_yuzhi[select_xx]!=-1)
+                    pama_run_tidai[select_xx]=(pama_run_tidai[select_xx]+pama_run_yuzhi[select_xx])%pama_run_yuzhi[select_xx];
+            }
+            else if(sfxz==0)
+            {
+                if(KEY_Read(KEY0)==0)//æŒ‰ä¸‹KEY0é”®ï¼Œ
+                {
+                    //select_xx--;
+                    page_cj=0;
+                    select_xx=0;
+                    TFTSPI_CLS(u16BLACK);
+                    delayms(200);
+                }
+                if(KEY_Read(KEY1)==0)//æŒ‰ä¸‹KEY1é”®ï¼Œ
+                {
+                    select_xx++;
+
+                    delayms(200);
+                }
+                if(KEY_Read(KEY2)==0)//æŒ‰ä¸‹KEY2é”®ï¼Œ
+                {
+                    sfxz=1-sfxz;
+                    delayms(200);
+                }
+                select_xx=(select_xx+page_num[1])%page_num[1];
+            }
+
+
+        }
+
+        if(page_cj==2)
+        {
+            int i;
+            for(i=0;i<page_num[2];i++)
+            {
+                if(i==select_xx&&sfxz==0)
+                    TFTSPI_P6X8Str(1, 1+i, page_1[i], u16BLACK, u16WHITE);
+                else if(i==select_xx&&sfxz==1)
+                    TFTSPI_P6X8Str(1, 1+i, page_1[i], u16WHITE, u16BLUE);
+                else
+                    TFTSPI_P6X8Str(1, 1+i, page_1[i], u16WHITE, u16BLACK);
+            }
+            for(i=0;i<page_num[2];i++)
+            {
+                char txt[20];
+                sprintf(txt,"%2.1f", pid_tidai[i]);
+                if(i==select_xx&&sfxz==0)
+                    TFTSPI_P6X8Str(16, 1+i, txt, u16BLACK, u16WHITE);
+                else if(i==select_xx&&sfxz==1)
+                    TFTSPI_P6X8Str(16, 1+i, txt, u16WHITE, u16BLUE);
+                else
+                    TFTSPI_P6X8Str(16, 1+i, txt, u16WHITE, u16BLACK);
+            }
+
+
+
+            if(sfxz==1)
+            {
+                if(KEY_Read(KEY0)==0)//æŒ‰ä¸‹KEY0é”®ï¼Œ
+                {
+                    pid_tidai[select_xx]+=pid_zengjian[select_xx];
+                    delayms(200);
+                }
+                if(KEY_Read(KEY1)==0)//æŒ‰ä¸‹KEY1é”®ï¼Œ
+                {
+                    pid_tidai[select_xx]-=pid_zengjian[select_xx];
+                    delayms(200);
+                }
+                if(KEY_Read(KEY2)==0)//æŒ‰ä¸‹KEY2é”®ï¼Œ
+                {
+                    sfxz=1-sfxz;
+                    delayms(200);
+                }
+
+            }
+            else if(sfxz==0)
+            {
+                if(KEY_Read(KEY0)==0)//æŒ‰ä¸‹KEY0é”®ï¼Œ
+                {
+                    //select_xx--;
+                    page_cj=0;
+                    select_xx=0;
+                    TFTSPI_CLS(u16BLACK);
+                    delayms(200);
+                }
+                if(KEY_Read(KEY1)==0)//æŒ‰ä¸‹KEY1é”®ï¼Œ
+                {
+                    select_xx++;
+
+                    delayms(200);
+                }
+                if(KEY_Read(KEY2)==0)//æŒ‰ä¸‹KEY2é”®ï¼Œ
+                {
+                    sfxz=1-sfxz;
+                    delayms(200);
+                }
+                select_xx=(select_xx+page_num[2])%page_num[2];
+            }
+
+
+        }
+
+        if(page_cj==3)
+        {
+            int i,j;
+
+            for (i=0;i<LCDH;i++)
+            {
+                 for (j=0;j<LCDW;j++)
+                     oot[i][j]=ooutput[i][j];
+                     //oot[i][j]=output2[i][j];
+            }
+            TFTSPI_BinRoad(0, 10, LCDH, LCDW, (unsigned char *)oot);
+            for (i=0;i<LCDH;i++)
+            {
+                 for (j=0;j<LCDW;j++)
+                     //oot[i][j]=ooutput[i][j];
+                     oot[i][j]=output2[i][j];
+            }
+     /*
+             for (i=0;i<60;i++)
+             {
+                 for (j=0;j<94;j++)
+                 {
+                     oott[i][j]=ooutput2[i][j];
+                 }
+                     //oot[i][j]=ooutput[i][j];
+
+
+             }*/
+
+             TFTSPI_BinRoad(0, LCDH+10, LCDH, LCDW, (unsigned char *)oot);
+
+             char txt[20];
+             sprintf(txt,"%2d %2d %2d", tezheng[0],tezheng[1],tezheng[2]);
+             TFTSPI_P6X8Str(16, 1, txt, u16WHITE, u16BLACK);
+             sprintf(txt,"%2d %2d %2d", tezheng[3],tezheng[4],tezheng[5]);
+             TFTSPI_P6X8Str(16, 2, txt, u16WHITE, u16BLACK);
+             sprintf(txt,"%2d %2d %2d", tezheng[6],tezheng[7],tezheng[8]);
+             TFTSPI_P6X8Str(16, 3, txt, u16WHITE, u16BLACK);
+
+             sprintf(txt,"%10d", min_element[0]);
+             TFTSPI_P6X8Str(16, 4, txt, u16WHITE, u16BLACK);
+             sprintf(txt,"%10d", min_element[1]);
+             TFTSPI_P6X8Str(16, 5, txt, u16WHITE, u16BLACK);
+             sprintf(txt,"%10d", min_element[2]);
+             TFTSPI_P6X8Str(16, 6, txt, u16WHITE, u16BLACK);
+
+             sprintf(txt, "E1=%05d ", ECPULSE1);
+             TFTSPI_P6X8Str(16, 7, txt, u16WHITE, u16BLACK);
+             sprintf(txt, "E2=%05d ", ECPULSE2);
+             TFTSPI_P6X8Str(16, 8, txt, u16WHITE, u16BLACK);
+
+             sprintf(txt, "duty1=%05d ", duty1);
+             TFTSPI_P6X8Str(16, 9, txt, u16WHITE, u16BLACK);
+             sprintf(txt, "duty2=%05d ", duty2);
+             TFTSPI_P6X8Str(16, 10, txt, u16WHITE, u16BLACK);
+
+             sprintf(txt,"di=%5d", distc);
+             TFTSPI_P6X8Str(16, 11, txt, u16WHITE, u16BLACK);
+
+             if(KEY_Read(KEY0)==0|| KEY_Read(KEY1)==0||KEY_Read(KEY2)==0)
+             {
+                 TFTSPI_CLS(u16BLACK);
+                 page_cj=0;
+                 delayms(200);
+
+             }
+        }
+
+
+        if(page_cj==4)
+        {
+            pama_run.enable_csdjc=pama_run_tidai[0];
+            pama_run.enable_jays=pama_run_tidai[1];
+            pama_run.enable_jawd=pama_run_tidai[2];
+            pama_run.speed_set=pama_run_tidai[3];
+            pama_run.chasu_set=pama_run_tidai[4];//fanleyibaibei
+            pama_run.kmd_mod=pama_run_tidai[5];
+            pama_run.ckfx=pama_run_tidai[6];
+            pama_run.rucs=pama_run_tidai[7];
+            pama_run.enable_lty=pama_run_tidai[8];
+            pama_run.pdspeed=pama_run_tidai[9];
+
+
+            KP_motor = pid_tidai[0];
+            KI_motor = pid_tidai[1];
+            KD_motor = pid_tidai[2];
+            pama.kp = pid_tidai[3];      // Pè®°å¾—å¹…å€¼
+            pama.ki = pid_tidai[4];       // I
+            pama.kd = pid_tidai[5];
+
+            TFTSPI_CLS(u16BLACK);
+            delayms(1000);
+            waiting_cpu1=0;
+        }
+        if(page_cj==5)
+        {
+            pama_run.enable_csdjc=pama_run_tidai[0];
+            pama_run.enable_jays=pama_run_tidai[1];
+            pama_run.enable_jawd=pama_run_tidai[2];
+            pama_run.speed_set=pama_run_tidai[3];
+            pama_run.chasu_set=pama_run_tidai[4];//fanleyibaibei
+            pama_run.kmd_mod=pama_run_tidai[5];
+            pama_run.ckfx=2;
+            pama_run.rucs=pama_run_tidai[7];
+            pama_run.enable_lty=pama_run_tidai[8];
+            pama_run.pdspeed=pama_run_tidai[9];
+
+
+            KP_motor = pid_tidai[0];
+            KI_motor = pid_tidai[1];
+            KD_motor = pid_tidai[2];
+            pama.kp = pid_tidai[3];      // Pè®°å¾—å¹…å€¼
+            pama.ki = pid_tidai[4];       // I
+            pama.kd = pid_tidai[5];
+
+            TFTSPI_CLS(u16BLACK);
+            delayms(500);
+            waiting_cpu1=0;
+        }
+
+
+
+
+
+
+              //å»¶æ—¶ç­‰å¾…
+
+    }
+
+
+    while(1)//ä¸»å¾ªç¯
+    {
+        // åˆ‡è®°CPU0,CPU1...ä¸å¯ä»¥åŒæ—¶å¼€å¯å±å¹•æ˜¾ç¤ºï¼Œå¦åˆ™å†²çªä¸æ˜¾ç¤º
         char txt[30];
         int i,j;
         dLc=Lc;
@@ -232,226 +649,144 @@ int core1_main (void)
             }
 
         }
-        //TFTSPI_BinRoad(0, 0, LCDH, LCDW, (unsigned char *)oot);
+        //TFTSPI_BinRoad(0, 0, LCDH, LCDW, (unsigned char *)Bin_Image);
+        TFTSPI_BinRoad(0, 0, LCDH, LCDW, (unsigned char *)oot);
 
 
 
 
-        for (i=0;i<LCDH;i++)
+       for (i=0;i<LCDH;i++)
         {
             for (j=0;j<LCDW;j++)
                 oot[i][j]=ooutput[i][j];
+                //oot[i][j]=output2[i][j];
         }
+/*
+        for (i=0;i<60;i++)
+        {
+            for (j=0;j<94;j++)
+            {
+                oott[i][j]=ooutput2[i][j];
+            }
+                //oot[i][j]=ooutput[i][j];
 
 
-        //TFTSPI_BinRoad(0, LCDH, LCDH, LCDW, (unsigned char *)oot);
+        }*/
 
+        TFTSPI_BinRoad(0, LCDH, LCDH, LCDW, (unsigned char *)oot);
 
+/*
         sprintf(txt, "state: %02d \n", t_state);
         //UART_PutStr(UART0,txt);
-        TFTSPI_P8X16Str(0, 5, txt, u16WHITE, u16BLACK);
+        TFTSPI_P6X8Str(0, 5, txt, u16WHITE, u16BLACK);
 
         sprintf(txt, "pid1:%.01f %.01f %.01f \n", pama.kp,pama.ki,pama.kd);
         UART_PutStr(UART0,txt);
-        TFTSPI_P8X16Str(0, 6, txt, u16WHITE, u16BLACK);
-        sprintf(txt, "pid2:%.01f %.01f %.01f \n", KP_motor,KI_motor,KD_motor);
+        TFTSPI_P6X8Str(0, 6, txt, u16WHITE, u16BLACK);
+        sprintf(txt, "pid2:%.02f %.02f %.01f \n", KP_motor,KI_motor,KD_motor);
         UART_PutStr(UART0,txt);
-        TFTSPI_P8X16Str(0, 7, txt, u16WHITE, u16BLACK);
-
-
+        TFTSPI_P6X8Str(0, 7, txt, u16WHITE, u16BLACK);
+*/
+/*
         //delayms(500);
         sprintf(txt, "E1=%05d ", ECPULSE1);
-        TFTSPI_P8X16Str(0, 0, txt, u16WHITE, u16BLACK);
+        TFTSPI_P6X8Str(0, 0, txt, u16WHITE, u16BLACK);
         if (ECPULSE1>e1max)
             e1max=ECPULSE1;
         sprintf(txt, "E1max=%05d ", e1max);
-        TFTSPI_P8X16Str(0, 1, txt, u16WHITE, u16BLACK);
+        TFTSPI_P6X8Str(0, 1, txt, u16WHITE, u16BLACK);
         UART_PutStr(UART0,txt);
         sprintf(txt, "E2=%05d ", ECPULSE2);
-        TFTSPI_P8X16Str(0, 2, txt, u16WHITE, u16BLACK);
+        TFTSPI_P6X8Str(0, 2, txt, u16WHITE, u16BLACK);
         if (ECPULSE2>e2max)
             e2max=ECPULSE2;
         sprintf(txt, "E2max=%05d ", e2max);
-        TFTSPI_P8X16Str(0, 3, txt, u16WHITE, u16BLACK);
+        TFTSPI_P6X8Str(0, 3, txt, u16WHITE, u16BLACK);
         //UART_PutStr(UART0,txt);
         //delayms(500);
+         */
+
         int lt=LEFT_EDGE_type;
         sprintf(txt, "Lt=%02d ", lt);
-        TFTSPI_P8X16Str(12, 0, txt, u16WHITE, u16BLACK);
-        UART_PutStr(UART0,txt);
+        TFTSPI_P6X8Str(16, 0, txt, u16WHITE, u16BLACK);
+        //UART_PutStr(UART0,txt);
         int rt=RIGHT_EDGE_type;
         sprintf(txt, "Rt=%02d ", rt);
-        TFTSPI_P8X16Str(12, 1, txt, u16WHITE, u16BLACK);
-        UART_PutStr(UART0,txt);
+        TFTSPI_P6X8Str(16, 1, txt, u16WHITE, u16BLACK);
+        //UART_PutStr(UART0,txt);
+
+        int c1=0;
+        int temp_i=1;
+        int scan_row=40;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[scan_row][47-temp_i])||white_(ooutput[scan_row][47-temp_i-1])||white_(ooutput[scan_row][47-temp_i-2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[scan_row][47+temp_i])||white_(ooutput[scan_row][47+temp_i+1])||white_(ooutput[scan_row][47+temp_i+2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+
         int t=time/1000;
+        //t=c1;
         sprintf(txt, "t=%03d ", t);
 
-        TFTSPI_P8X16Str(12, 2, txt, u16WHITE, u16BLACK);
+        TFTSPI_P6X8Str(16, 2, txt, u16WHITE, u16BLACK);
         //int t;
         t=ti;
         sprintf(txt, "ti=%03d ", t);
-        TFTSPI_P8X16Str(12, 4, txt, u16WHITE, u16BLACK);
+        TFTSPI_P6X8Str(16, 4, txt, u16WHITE, u16BLACK);
         int el=inelement;
         sprintf(txt, "el=%d ", el);
-        TFTSPI_P8X16Str(12, 3, txt, u16WHITE, u16BLACK);
-        //UART_PutStr(UART0,txt);
-        //sprintf(txt, "Rp= %02d,%02d,%02d ", rccr,rcco,ra);
-        //TFTSPI_P8X16Str(0, 7, txt, u16WHITE, u16BLACK);
-        //UART_PutStr(UART0,txt);
+        TFTSPI_P6X8Str(16, 3, txt, u16WHITE, u16BLACK);
+        extern int det_error_mohu;
+        extern int error_mohu;
+        extern int xieru_flag;
+        sprintf(txt, "xr=%d ", xieru_flag);
+        TFTSPI_P6X8Str(16, 5, txt, u16WHITE, u16BLACK);
+        sprintf(txt, "ra=%3d", lb_ra);
+        TFTSPI_P6X8Str(16, 6, txt, u16WHITE, u16BLACK);
+
+        sprintf(txt, "la=%3d ", lb_la);
+        TFTSPI_P6X8Str(16, 7, txt, u16WHITE, u16BLACK);
+        sprintf(txt, "yaw=%3.2f ", Yaw);
+        TFTSPI_P6X8Str(16, 8, txt, u16WHITE, u16BLACK);
+        sprintf(txt, "pitch=%3.2f ", Pitch);
+        TFTSPI_P6X8Str(16, 9, txt, u16WHITE, u16BLACK);
+        sprintf(txt, "roll=%3.2f ", Roll);
+        TFTSPI_P6X8Str(16, 10, txt, u16WHITE, u16BLACK);
+        sprintf(txt, "zdcd=%3d ", zdcd);
+        TFTSPI_P6X8Str(16, 11, txt, u16WHITE, u16BLACK);
+
+        sprintf(txt,"yyh=%6d", min_element[0]);
+        TFTSPI_P6X8Str(16, 12, txt, u16WHITE, u16BLACK);
+        sprintf(txt,"zyh=%6d", min_element[1]);
+        TFTSPI_P6X8Str(16, 13, txt, u16WHITE, u16BLACK);
+        sprintf(txt,"cd=%6d", min_element[2]);
+        TFTSPI_P6X8Str(16, 14, txt, u16WHITE, u16BLACK);
+        sprintf(txt,"di=%4d", distc);
+        TFTSPI_P6X8Str(16, 15, txt, u16WHITE, u16BLACK);
+        //Yaw,Pitch,Roll
 
         //delayms(500);
-        if(t_state==0)
-        {
-            if(KEY_Read(KEY0)==0)//°´ÏÂKEY0¼ü£¬
-            {
-                t_state=10;//pidµç»ú
-            }
-            if(KEY_Read(KEY1)==0)//°´ÏÂKEY1¼ü£¬
-            {
-                t_state=20;//pid¶æ»ú
-            }
-            if(KEY_Read(KEY2)==0)//°´ÏÂKEY2¼ü£¬
-            {
-                //R=0;
-                //R=0;
-                ;
-            }
-        }
-        else if(t_state==10)
-        {
-            if(KEY_Read(KEY0)==0)//°´ÏÂKEY0¼ü£¬
-            {
-                t_state=11;//p
-            }
-            if(KEY_Read(KEY1)==0)//°´ÏÂKEY1¼ü£¬
-            {
-                t_state=12;//i
-            }
-            if(KEY_Read(KEY2)==0)//°´ÏÂKEY2¼ü£¬
-            {
-                t_state=13;//d
-            }
-        }
-        else if(t_state==20)
-        {
-            if(KEY_Read(KEY0)==0)//°´ÏÂKEY0¼ü£¬
-            {
-                t_state=21;//p
-            }
-            if(KEY_Read(KEY1)==0)//°´ÏÂKEY1¼ü£¬
-            {
-                t_state=22;//i
-            }
-            if(KEY_Read(KEY2)==0)//°´ÏÂKEY2¼ü£¬
-            {
-                t_state=23;//d
-            }
-        }
-        else if(t_state==11)
-                {
-                    if(KEY_Read(KEY0)==0)//°´ÏÂKEY0¼ü£¬
-                    {
-                        pama.kp+=1;//p
-                    }
-                    if(KEY_Read(KEY1)==0)//°´ÏÂKEY1¼ü£¬
-                    {
-                        pama.kp-=1;//i
-                    }
-                    if(KEY_Read(KEY2)==0)//°´ÏÂKEY2¼ü£¬
-                    {
-                        t_state=0;//d
-                        e1max=0;
-                        e2max=0;
-                    }
-                }
-        else if(t_state==12)
-                {
-                    if(KEY_Read(KEY0)==0)//°´ÏÂKEY0¼ü£¬
-                    {
-                        pama.ki+=0.1;//p
-                    }
-                    if(KEY_Read(KEY1)==0)//°´ÏÂKEY1¼ü£¬
-                    {
-                        pama.ki-=0.1;//i
-                    }
-                    if(KEY_Read(KEY2)==0)//°´ÏÂKEY2¼ü£¬
-                    {
-                        t_state=0;
-                        e1max=0;//d
-                        e2max=0;
-                    }
-                }
-        else if(t_state==13)
-                {
-                    if(KEY_Read(KEY0)==0)//°´ÏÂKEY0¼ü£¬
-                    {
-                        pama.kd+=0.1;//p
-                    }
-                    if(KEY_Read(KEY1)==0)//°´ÏÂKEY1¼ü£¬
-                    {
-                        pama.kd-=0.1;//i
-                    }
-                    if(KEY_Read(KEY2)==0)//°´ÏÂKEY2¼ü£¬
-                    {
-                        t_state=0;//d
-                        e1max=0;
-                        e2max=0;
-                    }
-                }
-        else if(t_state==21)
-                {
-                    if(KEY_Read(KEY0)==0)//°´ÏÂKEY0¼ü£¬
-                    {
-                        KP_motor+=0.1;//p
-                    }
-                    if(KEY_Read(KEY1)==0)//°´ÏÂKEY1¼ü£¬
-                    {
-                        KP_motor-=0.1;//i
-                    }
-                    if(KEY_Read(KEY2)==0)//°´ÏÂKEY2¼ü£¬
-                    {
-                        t_state=0;//d
-                        e1max=0;
-                        e2max=0;
-                    }
-                }
-        else if(t_state==22)
-                {
-                    if(KEY_Read(KEY0)==0)//°´ÏÂKEY0¼ü£¬
-                    {
-                        KI_motor+=0.1;//i+
-                    }
-                    if(KEY_Read(KEY1)==0)//°´ÏÂKEY1¼ü£¬
-                    {
-                        KI_motor-=0.1;//i-
-                    }
-                    if(KEY_Read(KEY2)==0)//°´ÏÂKEY2¼ü£¬
-                    {
-                        t_state=0;
-                        e1max=0;
-                        e2max=0;
-                    }
-                }
-        else if(t_state==23)
-                {
-                    if(KEY_Read(KEY0)==0)//°´ÏÂKEY0¼ü£¬
-                    {
-                        KD_motor+=0.1;//d+
-                    }
-                    if(KEY_Read(KEY1)==0)//°´ÏÂKEY1¼ü£¬
-                    {
-                        KD_motor-=0.1;//d-
-                    }
-                    if(KEY_Read(KEY2)==0)//°´ÏÂKEY2¼ü£¬
-                    {
-                        t_state=0;
-                        e1max=0;
-                        e2max=0;
-                    }
-                }
-        if(KEY_Read(KEY0)& KEY_Read(KEY1)& KEY_Read(KEY2)==0)
-            delayms(200);              //ÑÓÊ±µÈ´ı
 
-        // CameraCar(); // ÉãÏñÍ·ËÄÂÖ³µË«µç»ú¿ØÖÆ£¬¼òµ¥µÄ·Ö¶Î±ÈÀı¿ØÖÆËã·¨
+
+
+        // CameraCar(); // æ‘„åƒå¤´å››è½®è½¦åŒç”µæœºæ§åˆ¶ï¼Œç®€å•çš„åˆ†æ®µæ¯”ä¾‹æ§åˆ¶ç®—æ³•
     }
 }

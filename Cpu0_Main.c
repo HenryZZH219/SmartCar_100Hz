@@ -109,7 +109,7 @@ QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ*/
 
 App_Cpu0 g_AppCpu0;                     // brief CPU 0 global data
 IfxCpu_mutexLock mutexCpu0InitIsOk = 1; // CPU0 初始化完成标志位
-volatile char mutexCpu0TFTIsOk = 0;     // CPU1 0占用/1释放 TFT
+volatile char mutexCpu0TFTIsOk = 1;     // CPU1 0占用/1释放 TFT
 
 /*************************************************************************
  *  函数名称：int core0_main (void)
@@ -119,16 +119,31 @@ volatile char mutexCpu0TFTIsOk = 0;     // CPU1 0占用/1释放 TFT
  *  修改时间：2020年3月10日
  *  备    注：
  *************************************************************************/
-
+extern short aacx,aacy,aacz;            //加速度传感器原始数据
+extern short gyrox,gyroy,gyroz;        //陀螺仪原始数据
 #define IMGH 60
 #define IMGW 94
 #define length 150
-int K_MD = 30;
-int t_state = 0; // ceshiyong shan
+float Fuzzycomputation(float *qValue);
+int wandao();
+float rule[7][7] =
+{-10,-5  ,-3  ,0.5  ,-1   ,-2  ,-3,
+  -8 ,-5  ,-3  ,0.5  ,-1  ,-1  ,-3,
+ -8 ,-5  ,-3  ,0.5  ,-1,-0.5,-3,
+ 0  ,-1  ,-0.5,1.5,-0.5 ,-1  ,0,
+ -3 ,-0.5,-0.5,0.5  ,-3  ,-5  ,-8,
+ -3 ,-1  ,-1  ,0.5  ,-3  ,-5  ,-8,
+ -3 ,-2  ,-1  ,0.5  ,-3  ,-5  ,-10,
+};//调试参数
+float speed_delta;
+float FUR_PID(int target_E,int target_EC);
+int check_pd();
+int K_MD =30;
+
 unsigned char output[LCDH][LCDW];
 unsigned char ooutput[LCDH][LCDW];
 unsigned char output2[LCDH][LCDW];
-unsigned char ooutput2[LCDH][LCDW];
+
 int time=0;
 int ti=0;
 
@@ -152,12 +167,23 @@ struct pid_param_t
     float pre_pre_error;
 };
 
-//进入元素 0为无 1为十字 2为圆环
+unsigned short Ad_Value(void);
+unsigned short distc=0;
+void qingkongsiyuansu();
+
+
+//进入元素 0为无 1为十字 2为圆环3cd 4dzl 5bmx
 int inelement=0;
+int number_cd=0;
 void event_check(); //事件判断
 int check_yhj();
+int check_bmx(int pre_state);
+void process_pd();
+
+void process_rk(int x);
+int check_yhj_db();
 int motor_PID(int ECPULSE_SET, int ECPULSE_REAL, int *error_last_1, int *error_last_2, float KP, float KI, float KD, int *duty);
-int duty_max = 7000;
+int flag_pd=0;
 struct pid_param_t pama;
 struct pid_param_t *p_pama = &pama;
 int error_last_11 = 0;
@@ -165,10 +191,11 @@ int error_last_12 = 0;
 int error_last_21 = 0;
 int error_last_22 = 0;
 int duty1 = 0, duty2 = 0;
-int SPEED_SET = 550;
-float KP_motor = 2.0;
-float KI_motor = 6.0;
-float KD_motor = 4.0;
+int SPEED_SET = 700;
+int duty_max=9000;
+float KP_motor = 8;
+float KI_motor = 1.6;
+float KD_motor = 0;
 float pid_solve(struct pid_param_t *pid, float error);
 float get_pure_bias();
 void pid_init();
@@ -180,7 +207,9 @@ int black_(int x); //ÅÐ¶ÏºÚ
 int Get_angle(int ax, int ay, int bx, int by, int cx, int cy);
 void get_mid(unsigned char image[][IMGW]);
 float akm(int duty);
-int Road_Width = 36; //Â·¿í
+void simple_bu(int flag);
+void check_element_by_tz(int tz[9]);
+int Road_Width = 34; //Â·¿í
 //      Ê¹ÄÜÏà¹Ø±äÁ¿
 int enable_balinyu = 1;             //°ËÁÚÓòÅÀÏßÊ¹ÄÜ±êÖ¾£¬Ä¬ÈÏÊ¹ÄÜ
 int enable_midline = 0;             //Ê¹ÄÜÖÐÏßÄâºÏ£¬Ä¬ÈÏ²»¿ªÆô
@@ -215,6 +244,10 @@ int pre_R_edge_count = 0;
 int num_cnt = 0; //¼ÇÂ¼Á¬ÐøË®Æ½µãµÄ¸öÊý
 int L_count = 0;
 int R_count = 0;
+
+
+int zhongxian=IMGW/2-3;
+uint32 smotor_pd;
 //          ¹Õµã´¦Àí
 int enable_L_corner = 1; //×ó¹ÕµãËÑË÷Ê¹ÄÜ±êÖ¾ Ä¬ÈÏÊ¹ÄÜ
 int enable_R_corner = 1; //ÓÒ¹ÕµãËÑË÷ÊÇÄÜ±êÖ¾ Ä¬ÈÏÊ¹ÄÜ
@@ -227,7 +260,7 @@ struct CORNER
     int corner_icount;
 };
 struct CORNER Lc, Rc, uLc, uRc;
-
+int min_element[3];
 
 /*
 int L_corner_flag = 0;   //×ó¹Õµã´æÔÚ±êÖ¾
@@ -252,6 +285,8 @@ struct EDGE
                 int flag; //´æÔÚ±ß½çµÄ±êÖ¾
             };*/
 int min_count = 20;
+int count_black=0;
+int bmx_number=0;
 unsigned char image_zero[IMGH][IMGW]; //Ê¹ÓÃ¶þÎ¬Ö¸Õëimage´úÌæÐÅÏ¢Í¼Ïñ£¬±ãÓÚºóÆÚ¶þÖµ»¯Í¼ÏñºÍÉî¶ÈÍ¼ÏñµÄ×ª»»
 int row_known_geti(int row,struct EDGE line[], int count);
 
@@ -277,21 +312,81 @@ float Kakm;
 int ercinh(struct EDGE *Line, int count);
 void corner_find(struct EDGE line[], int dir, struct CORNER *cor, int count); //线的性质判断
 void line_check();
-
+uint32 ck_right=Servo_Right_Min+10;
+uint32 ck_left=Servo_Left_Max-10;
 
 void process_sz();
 void process_element();
-void process_yh();
+void process_yh(int pre_state);
 void process_cd();
+void process_dzl();
+//void process_rk();
+void process_bmx(int pre_state);
 int szorcd_check();
+int road_wid(int x);
 int checkcorner(struct EDGE line[],int i);
 void spot2spot(unsigned char immage[][IMGW], int x1,int y1, int x2,int y2 );
+
+
+void corner_angle_lb();
+int lb_la,lb_ra;
+int lb_count_l,lb_count_r;
+
+
+int xieru_flag;//0 zhengru 1 zuoguai 2 youguai
+
+
+
+
+//临时
+uint32 duty_smotor=Servo_Center_Mid;
+int det_error_mohu;
+int error_mohu;
+
+
+void jjjs(int frame);
+int afterys();//after dingzilu  yuanhuan
+
+float Yaw,Pitch,Roll;//zitai
+
+void process_ck(int x);
+
+void ytdx_event_check();
+int frame_after_zero=0;
+int frame_after_wandao=0;
+
+int last_duty_smotor=Servo_Center_Mid;
+
+
+struct running_pama
+{
+        int enable_csdjc;// chu sai dao jian ce
+        int enable_jays;//jin ai yuan su
+        int enable_jawd;//jin ai wan dao
+        int speed_set;//sudushezhi
+        int chasu_set;//chasushezhi
+        int kmd_mod;//KMDmoshi
+        int ckfx;//chukufangxiang
+        int rucs;//dijicikandaobanmaxianruku
+        int enable_lty;
+        int pdspeed;
+};
+
+struct running_pama pama_run;
+
+int waiting_cpu1=1;
+int zdcd;
+
+int tezheng[9];
+
+void bfs_lty(unsigned char ori[60][94], unsigned char tar[60][94], int x, int y);
 /*************************************************************************
 函数声明用
 
 *************************************************************************/
 int core0_main(void)
 {
+
 
     // 关闭CPU总中断
     IfxCpu_disableInterrupts();
@@ -330,8 +425,8 @@ int core0_main(void)
     // 以下测试函数，内建死循环，用户可调用所用模块的初始化及读写函数来实现自己的任务
     //________________________________________________________________________________
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    //    Test_ADC();            //PASS,测试ADC采样时间  OLED上显示 ADC采样10K次时间
-    //    Test_ADC_7mic();       //PASS,测试ADC\UART0、STM延时和闪灯，通过UART0打印 AN0--AN7共8个通道ADC转换数据
+    // Test_ADC();            //PASS,测试ADC采样时间  OLED上显示 ADC采样10K次时间
+    //   Test_ADC_7mic();       //PASS,测试ADC\UART0、STM延时和闪灯，通过UART0打印 AN0--AN7共8个通道ADC转换数据
     //    LQ_Atom_Motor_8chPWM();//PASS,测试GTM_ATOM生成不同频率下的8路PWM
     //    LQ_ATom_Servo_2chPWM();//PASS,测试GTM_ATOM、STM延时和闪灯，P33.10和P33.13作为ATOM输出口控制舵机
     //    LQ_Tom_Servo_2chPWM(); //PASS,测试GTM_TOM、STM延时和闪灯，P33.10和P33.13作为TOM输出口控制舵机
@@ -348,9 +443,9 @@ int core0_main(void)
     //   Test_Bluetooth();      //PASS,测试UART0(P14.0RX/P14.1TX)，
     //    Test_EEPROM();         //PASS,测试内部EEPROM擦写功能  OLED提示是否写入成功
     //    Test_Vl53();           //PASS,测试VL53  IIC接线   P13_1接SCL  P13_2接SDA OLED显示原始数据
-    //    Test_9AX();            //PASS,测试龙邱九轴 IIC接线   P13_1接SCL  P13_2接SDA OLED显示原始数据
+     //   Test_9AX();            //PASS,测试龙邱九轴 IIC接线   P13_1接SCL  P13_2接SDA OLED显示原始数据
     //    Test_MPU6050();        //PASS,测试MPU6050或者ICM20602 IIC接线   P13_1接SCL  P13_2接SDA OLED显示原始数据
-    //    Test_ICM20602();       //PASS,测试ICM20602 SPI接线   P15_8接SCL  P15_5接SDA  P15_7接SA  P15_2接CS OLED显示原始数据
+   //    Test_ICM20602();       //PASS,测试ICM20602 SPI接线   P15_8接SCL  P15_5接SDA  P15_7接SA  P15_2接CS OLED显示原始数据
     // Test_CAMERA();         //PASS,测试龙邱神眼摄像头并在屏幕上显示  LQ_CAMERA.h 中选择屏幕
     //    Test_SoftFft();        //PASS,测试ILLD库的软件FFT函数
     //    Test_FFT();            //PASS,测试硬件FFT  注意需要芯片后缀带DA的才有硬件FFT功能
@@ -360,7 +455,7 @@ int core0_main(void)
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // 电感及电池电压 ADC采集初始化
     // InductorInit();
-    // ADC_InitConfig(ADC7, 80000); // 初始化   如果使用龙邱母板  则测分压后的电池电压，具体可以看母板原理图
+     ADC_InitConfig(ADC0, 80000); // 初始化   如果使用龙邱母板  则测分压后的电池电压，具体可以看母板原理图
 
     /* 电机、舵机，编码器初始化 */
     MotorInit(); // 电机
@@ -368,43 +463,74 @@ int core0_main(void)
     EncInit();   // 编码器
 
     // 以下三个测试函数为死循环，标定舵机、电机和编码器用的，开启后后面不会运行！
-    // TestServo();  // 测试及标定舵机，TFT1.8输出
+    // TestServo();  // 测试及标定舵proce机，TFT1.8输出
     //  TestMotor();  // 测试及标定电机，TFT1.8输f出
     // TestEncoder();  // 测试编码器正交解码,TFT1.8和UART输出
     /* 摄像头初始化 */
     CAMERA_Init(100);
+    QSPI_InitConfig(QSPI2_CLK_P15_8, QSPI2_MISO_P15_7, QSPI2_MOSI_P15_5, QSPI2_CS_P15_2, 5000000, 3);
+    ICM20602_Init();
     pid_init();
+
     RIGHT_EDGE_type=LEFT_EDGE_type=-5;
-    int cccc=0;
+
     //unsigned long lastTime = STM_GetNowUs(STM0);
 
-    int delttime;
-    while (1) //主循环
+    //run_pama init
+    pama_run.enable_csdjc=1;
+    pama_run.enable_jays=1;
+    pama_run.enable_jawd=1;
+    pama_run.speed_set=700;
+    pama_run.chasu_set=8;
+    pama_run.kmd_mod=50;
+    pama_run.ckfx=1;
+    pama_run.rucs=1;
+    pama_run.enable_lty=1;
+    pama_run.pdspeed=300;
+
+    SPEED_SET=0;
+    float Hd[3][3] = {{2.659134, -0.004177, -27.589874}, {1.114640, 1.033582, -18.780196}, {0.024500, -0.000071, 0.746029}};
+    int x,y,X,Y;
+    int trans[60][94][2];
+    for (x = 0; x < LCDH; x++)
+    {
+        for (y = 0; y < LCDW; y++)
+        {
+
+            X = (int)(((Hd[0][1] - Hd[2][1] * y) * (Hd[1][2] - Hd[2][2] * y) - (Hd[0][2] - Hd[2][2] * x) * (Hd[1][1] - Hd[2][1] * y)) / ((Hd[0][0] - Hd[2][0] * x) * (Hd[1][1] - Hd[2][1] * y) - (Hd[0][1] - Hd[2][1] * x) * (Hd[1][0] - Hd[2][0] * y)) + 0.5);
+            Y = -(int)(((Hd[0][0] - Hd[2][0] * x) * (Hd[1][2] - Hd[2][2] * y) - (Hd[0][2] - Hd[2][2] * x) * (Hd[1][0] - Hd[2][0] * y)) / ((Hd[0][0] - Hd[2][0] * x) * (Hd[1][1] - Hd[2][1] * y) - (Hd[0][1] - Hd[2][1] * x) * (Hd[1][0] - Hd[2][0] * y)) + 0.5);
+            trans[x][y][0]=X;
+            trans[x][y][1]=Y;
+        }
+    }
+
+
+    while(waiting_cpu1==1)
     {
 
         if (Camera_Flag == 2)
         {
 
-            unsigned long nowTime = STM_GetNowUs(STM0);
 
-            Mid_count=0;
             Get_Use_Image();
             Camera_Flag = 0;
             Get_Bin_Image(0);
 
+
             int X, Y, x, y;
-            uint32 duty_smotor;
-            float s;
+
+            int s;
             char txt[20];
 
-            float Hd[3][3] = {{2.659134, -0.004177, -27.589874}, {1.114640, 1.033582, -18.780196}, {0.024500, -0.000071, 0.746029}};
             for (x = 0; x < LCDH; x++)
             {
                 for (y = 0; y < LCDW; y++)
                 {
 
-                    X = (int)(((Hd[0][1] - Hd[2][1] * y) * (Hd[1][2] - Hd[2][2] * y) - (Hd[0][2] - Hd[2][2] * x) * (Hd[1][1] - Hd[2][1] * y)) / ((Hd[0][0] - Hd[2][0] * x) * (Hd[1][1] - Hd[2][1] * y) - (Hd[0][1] - Hd[2][1] * x) * (Hd[1][0] - Hd[2][0] * y)) + 0.5);
-                    Y = -(int)(((Hd[0][0] - Hd[2][0] * x) * (Hd[1][2] - Hd[2][2] * y) - (Hd[0][2] - Hd[2][2] * x) * (Hd[1][0] - Hd[2][0] * y)) / ((Hd[0][0] - Hd[2][0] * x) * (Hd[1][1] - Hd[2][1] * y) - (Hd[0][1] - Hd[2][1] * x) * (Hd[1][0] - Hd[2][0] * y)) + 0.5);
+                    //X = (int)(((Hd[0][1] - Hd[2][1] * y) * (Hd[1][2] - Hd[2][2] * y) - (Hd[0][2] - Hd[2][2] * x) * (Hd[1][1] - Hd[2][1] * y)) / ((Hd[0][0] - Hd[2][0] * x) * (Hd[1][1] - Hd[2][1] * y) - (Hd[0][1] - Hd[2][1] * x) * (Hd[1][0] - Hd[2][0] * y)) + 0.5);
+                    //Y = -(int)(((Hd[0][0] - Hd[2][0] * x) * (Hd[1][2] - Hd[2][2] * y) - (Hd[0][2] - Hd[2][2] * x) * (Hd[1][0] - Hd[2][0] * y)) / ((Hd[0][0] - Hd[2][0] * x) * (Hd[1][1] - Hd[2][1] * y) - (Hd[0][1] - Hd[2][1] * x) * (Hd[1][0] - Hd[2][0] * y)) + 0.5);
+                    X=trans[x][y][0];
+                    Y=trans[x][y][1];
                     if (X >= 0 && LCDH > X && Y >= 0 && LCDW > Y)
                     {
                         ooutput[x][y] = Bin_Image[X][Y];
@@ -413,68 +539,314 @@ int core0_main(void)
                     {
                         ooutput[x][y] = 0;
                     }
+
+                    //output2[x][y] = Bin_Image[x][y];
+                    output2[x][y] = 0;
+                    //ooutput[x][y] = Bin_Image[x][y];
+                    if(y==0||y==1||y==LCDW-1||y==LCDW-2)
+                        ooutput[x][y] = 0;
                 }
             }
+            if(Bin_Image[57][47]==1)
+            {
+                output2[57][47] = 1;
+                for (x = 57; x >=0 ; x--)
+                {
+                    for (y = 47; y < LCDW-1; y++)
+                    {
+                        if(Bin_Image[x][y]==1&&(output2[x][y-1]==1||output2[x][y+1]==1||output2[x+1][y]==1))
+                            output2[x][y]=1;
+                    }
+                }
+                for (x = 57; x >=0 ; x--)
+                {
+                    for (y = 47; y >= 1; y--)
+                    {
+                        if(Bin_Image[x][y]==1&&(output2[x][y-1]==1||output2[x][y+1]==1||output2[x+1][y]==1))
+                            output2[x][y]=1;
+                    }
+                }
+
+            }
+
+
+                //bfs_lty(Bin_Image,output2,57,47);
+            for(x=0;x<9;x++)
+                tezheng[x]=0;
+            for (x = 0; x < 30; x+=3)
+            {
+                for (y = 2; y < 92; y+=3)
+                {
+                    int i,j;
+                    i=x/10;
+                    j=(y-2)/30;
+                    tezheng[i*3+j]+=output2[x][y];
+                }
+            }
+
+            check_element_by_tz(tezheng);
+
+
+
+
+        }
+
+    }
+
+
+
+    if(pama_run.ckfx!=2)
+        process_ck(pama_run.ckfx);
+    SPEED_SET=pama_run.speed_set;
+    K_MD=(int)(pama_run.kmd_mod-((1)*SPEED_SET)/30);
+
+    while (1) //主循环
+    {
+
+        if (Camera_Flag == 2)
+        {
+
+            unsigned long nowTime = STM_GetNowUs(STM0);
+
+            duty_max = 9000;
+
+            Mid_count=0;
+            Get_Use_Image();
+            Camera_Flag = 0;
+            Get_Bin_Image(0);
+
+
+            int X, Y, x, y;
+
+            int s;
+            char txt[20];
+
+            //float Hd[3][3] = {{2.659134, -0.004177, -27.589874}, {1.114640, 1.033582, -18.780196}, {0.024500, -0.000071, 0.746029}};
+
+            if(inelement==2&&SPEED_SET>600&&(ti==2||ti==12))
+            {
+                for (x = -10; x < 50; x++)
+                {
+                    for (y = 0; y < LCDW; y++)
+                    {
+
+                        X = (int)(((Hd[0][1] - Hd[2][1] * y) * (Hd[1][2] - Hd[2][2] * y) - (Hd[0][2] - Hd[2][2] * x) * (Hd[1][1] - Hd[2][1] * y)) / ((Hd[0][0] - Hd[2][0] * x) * (Hd[1][1] - Hd[2][1] * y) - (Hd[0][1] - Hd[2][1] * x) * (Hd[1][0] - Hd[2][0] * y)) + 0.5);
+                        Y = -(int)(((Hd[0][0] - Hd[2][0] * x) * (Hd[1][2] - Hd[2][2] * y) - (Hd[0][2] - Hd[2][2] * x) * (Hd[1][0] - Hd[2][0] * y)) / ((Hd[0][0] - Hd[2][0] * x) * (Hd[1][1] - Hd[2][1] * y) - (Hd[0][1] - Hd[2][1] * x) * (Hd[1][0] - Hd[2][0] * y)) + 0.5);
+                        //X=trans[x][y][0];
+                        //Y=trans[x][y][1];
+                        if (X >= 0 && LCDH > X && Y >= 0 && LCDW > Y)
+                        {
+                            ooutput[x+10][y] = Bin_Image[X][Y];
+                        }
+                        else
+                        {
+                            ooutput[x+10][y] = 0;
+                        }
+                        output2[x+10][y] = Bin_Image[x+10][y];
+                        if(y==0||y==1||y==LCDW-1||y==LCDW-2)
+                            ooutput[x+10][y] = 0;
+                    }
+
+                }
+            }
+            else
+            {
+                for (x = 0; x < LCDH; x++)
+                {
+                    for (y = 0; y < LCDW; y++)
+                    {
+
+                        //X = (int)(((Hd[0][1] - Hd[2][1] * y) * (Hd[1][2] - Hd[2][2] * y) - (Hd[0][2] - Hd[2][2] * x) * (Hd[1][1] - Hd[2][1] * y)) / ((Hd[0][0] - Hd[2][0] * x) * (Hd[1][1] - Hd[2][1] * y) - (Hd[0][1] - Hd[2][1] * x) * (Hd[1][0] - Hd[2][0] * y)) + 0.5);
+                        //Y = -(int)(((Hd[0][0] - Hd[2][0] * x) * (Hd[1][2] - Hd[2][2] * y) - (Hd[0][2] - Hd[2][2] * x) * (Hd[1][0] - Hd[2][0] * y)) / ((Hd[0][0] - Hd[2][0] * x) * (Hd[1][1] - Hd[2][1] * y) - (Hd[0][1] - Hd[2][1] * x) * (Hd[1][0] - Hd[2][0] * y)) + 0.5);
+                        X=trans[x][y][0];
+                        Y=trans[x][y][1];
+                        if (X >= 0 && LCDH > X && Y >= 0 && LCDW > Y)
+                        {
+                            ooutput[x][y] = Bin_Image[X][Y];
+                        }
+                        else
+                        {
+                            ooutput[x][y] = 0;
+                        }
+                        if(pama_run.enable_lty==0)
+                            output2[x][y] = Bin_Image[x][y];
+                        else
+                            output2[x][y] = 0;
+                        //ooutput[x][y] = Bin_Image[x][y];
+                        if(y==0||y==1||y==LCDW-1||y==LCDW-2)
+                            ooutput[x][y] = 0;
+                    }
+                }
+            }
+
+            /*
+            for (x = -60; x < 0; x++)
+            {
+                for (y = 0; y < LCDW; y++)
+                {
+
+                    X = (int)(((Hd[0][1] - Hd[2][1] * y) * (Hd[1][2] - Hd[2][2] * y) - (Hd[0][2] - Hd[2][2] * x) * (Hd[1][1] - Hd[2][1] * y)) / ((Hd[0][0] - Hd[2][0] * x) * (Hd[1][1] - Hd[2][1] * y) - (Hd[0][1] - Hd[2][1] * x) * (Hd[1][0] - Hd[2][0] * y)) + 0.5);
+                    Y = -(int)(((Hd[0][0] - Hd[2][0] * x) * (Hd[1][2] - Hd[2][2] * y) - (Hd[0][2] - Hd[2][2] * x) * (Hd[1][0] - Hd[2][0] * y)) / ((Hd[0][0] - Hd[2][0] * x) * (Hd[1][1] - Hd[2][1] * y) - (Hd[0][1] - Hd[2][1] * x) * (Hd[1][0] - Hd[2][0] * y)) + 0.5);
+                    //X=trans[x][y][0];
+                    //Y=trans[x][y][1];
+                    if (X >= 0 && LCDH > X && Y >= 0 && LCDW > Y)
+                    {
+                        output2[x+60][y] = Bin_Image[X][Y];
+                    }
+                    else
+                    {
+                        output2[x+60][y] = 0;
+                    }
+                }
+            }*/
+            if(black_(ooutput[0][5]))
+            {
+                int i;
+                for(i=0;i<=5;i++)
+
+                {
+                    ooutput[0][i]=0;
+                    ooutput[1][i]=0;
+                }
+            }
+            if(black_(ooutput[0][94-5]))
+            {
+                int i;
+                for(i=0;i<=5;i++)
+                {
+                    ooutput[0][93-i]=0;
+                    ooutput[1][93-i]=0;
+                }
+            }
+            if(pama_run.enable_lty==1&&Bin_Image[57][47]==1)
+            {
+                output2[57][47] = 1;
+                for (x = 57; x >=0 ; x--)
+                {
+                    for (y = 47; y < LCDW-1; y++)
+                    {
+                        if(Bin_Image[x][y]==1&&(output2[x][y-1]==1||output2[x][y+1]==1||output2[x+1][y]==1))
+                            output2[x][y]=1;
+                    }
+                }
+                for (x = 57; x >=0 ; x--)
+                {
+                    for (y = 47; y >= 1; y--)
+                    {
+                        if(Bin_Image[x][y]==1&&(output2[x][y-1]==1||output2[x][y+1]==1||output2[x+1][y]==1))
+                            output2[x][y]=1;
+                    }
+                }
+
+            }
+
 
 
             Image_process((unsigned char *)ooutput);
             line_check();
             // event_check();
+
+
+            //chuyuansuhoujizhen
+            if(inelement==0)
+            {
+                qingkongsiyuansu();
+                if(frame_after_zero<50)
+                    frame_after_zero++;
+            }
+            else
+                frame_after_zero=0;
+
+            if(LEFT_EDGE_type!=2&&RIGHT_EDGE_type!=2)
+            {
+                if(frame_after_wandao<30)
+                    frame_after_wandao++;
+            }
+            else
+                frame_after_wandao=0;
+
             if (enable_midline)
                 get_mid((unsigned char *)ooutput);
 
-            s = (int)(get_pure_bias() + 0.5);
+            s = (int)(((get_pure_bias()+5)/10 + 0.5));
+
+            //jiaodu lvbo
+            corner_angle_lb();
 
 
-            duty_smotor = 625 - 5 * s;
+            //duojidasitiaojian
+            if(flag_pd==0)
+                duty_smotor = Servo_Center_Mid - 15* s ;
+            else if(flag_pd==1)
+                duty_smotor= smotor_pd ;
+            flag_pd=0;
+
+
+
             if (duty_smotor >= Servo_Left_Max)                  //限制幅值
                 duty_smotor = Servo_Left_Max;
             else if (duty_smotor <= Servo_Right_Min)            //限制幅值
                 duty_smotor = Servo_Right_Min;
 
 
-            cccc++;
-            if(cccc==2)
-            {
-                ServoCtrl(duty_smotor);
-                cccc=0;
-            }
-
-
-
+            last_duty_smotor = 0.4*(int)duty_smotor+0.6*last_duty_smotor;
 
             Kakm= akm(duty_smotor);
 
-            //lastTime = nowTime;
-            //nowTime = STM_GetNowUs(STM0); //采样时间开始
-            //ECPULSE1 = ENC_GetCounter(ENC2_InPut_P33_7);  //左电机 母板上编码器1，小车前进为负值
-            //ECPULSE2 = -ENC_GetCounter(ENC4_InPut_P02_8); //右电机 母板上编码器2，小车前进为正值
-
-
-            int E1=ECPULSE1*20/5;
-            int E2=-ECPULSE2*20/5;
-
-            motor_PID(SPEED_SET-(int)(Kakm*SPEED_SET), E1, &error_last_11, &error_last_12, KP_motor, KI_motor, KD_motor, &duty1);
-            motor_PID(SPEED_SET+(int)(Kakm*SPEED_SET), E2, &error_last_21, &error_last_22, KP_motor, KI_motor, KD_motor, &duty2);
-
-            int delt=1000;
-            int bangbangduty=7000;
-            if(E1-(SPEED_SET-(int)(Kakm*SPEED_SET))>delt)
-                duty1=-bangbangduty+6000;
-            else if((SPEED_SET-(int)(Kakm*SPEED_SET))-E1>delt)
-                duty1=bangbangduty;
-            if(E2-(SPEED_SET+(int)(Kakm*SPEED_SET))>delt)
-                duty2=-bangbangduty+6000;
-            else if((SPEED_SET+(int)(Kakm*SPEED_SET))-E2>delt)
-                duty2=bangbangduty;
-            //duty1=duty2=1000;
-            MotorCtrl4w(duty1, duty2, duty1, duty2);
 
 
 
 
-            LED_Ctrl(LEDALL, RVS);
+            if(duty_smotor-last_duty_smotor>20||duty_smotor-last_duty_smotor<-20)
+                det_error_mohu= ((int)duty_smotor-last_duty_smotor);
+            else
+                det_error_mohu=0;
+            error_mohu=((int)duty_smotor-Servo_Center_Mid);
+            //mohupid
+            //speed_delta=FUR_PID(error_mohu,det_error_mohu);
+            speed_delta=0;
+
+
+
+
+            jjjs(0);//jian su
+
+
+
+
+            zdcd=wandao();
+
+
+
+
+            if(inelement!=0)
+                LED_Ctrl(LEDALL, ON);
+            else
+                LED_Ctrl(LEDALL, OFF);
             time = STM_GetNowUs(STM0) - nowTime; //采样结束
+           // LED_Ctrl(LEDALL, RVS);
+
+            //chusaidaojiance
+            if(pama_run.enable_csdjc==1)
+            {
+                if(black_(ooutput[58][47])&&black_(ooutput[58][46])&&black_(ooutput[58][48]))
+                {
+                    if(count_black<5)
+                    count_black++;
+                }
+                else
+                {
+                    if(count_black>0)
+                    count_black--;
+                }
+                if(count_black==5)
+                {
+                    SPEED_SET=0;
+                    while(1);
+                }
+
+            }
+
         }
 
     }
@@ -517,15 +889,44 @@ void Image_process(unsigned char image[][IMGW])
     int exist_edge_size = 0; //ÅÐ¶ÏÊÇ·ñ´æÔÚ×ó/ÓÒ±ß½ç
 
     //Ñ°ÕÒ×ó\ÓÒÏß¿ªÊ¼µã£¬²¢ÅÐ¶ÏÊÇ·ñ´æÔÚµ±Ç°±ß
-    clear_point();
-    exist_edge_size = edge_point_ornot(image, L_basic_row_start, 0);
+    clear_point();//
+    if(inelement==5)
+    {
+        int i=50;
+        while(check_bmx(i)==0&&i<=59)
+        {
+            i++;
+        }
+        if(i!=60)
+            exist_edge_size = edge_point_ornot(image, L_basic_row_start-25, 0);
+        else
+            exist_edge_size = edge_point_ornot(image, L_basic_row_start, 0);
+    }
+    else
+        exist_edge_size = edge_point_ornot(image, L_basic_row_start, 0);
+
     if (exist_edge_size >= 0)
     {
         jilu_row_l = L_basic_row_start;
         jilu_col_l = exist_edge_size;
         left_findflag = 1;
     }
-    exist_edge_size = edge_point_ornot(image, R_basic_row_start, 1);
+
+    if(inelement==5)
+    {
+        int i=50;
+        while(check_bmx(i)==0&&i<=59)
+        {
+            i++;
+        }
+        if(i!=60)
+            exist_edge_size = edge_point_ornot(image, R_basic_row_start-25, 1);
+        else
+            exist_edge_size = edge_point_ornot(image, R_basic_row_start, 1);
+    }
+    else
+        exist_edge_size = edge_point_ornot(image, R_basic_row_start, 1);
+
     if (exist_edge_size >= 0)
     {
         jilu_row_r = R_basic_row_start;
@@ -547,10 +948,10 @@ void Image_process(unsigned char image[][IMGW])
         for (int i = 1; i < L_search_amount; i++) //×î¶àËÑË÷70¸öµã
         {
             ////Ô½½çÍË³ö ÐÐÔ½½çºÍÁÐÔ½½ç£¨ÏòÉÏÏòÏÂÏò×óÏòÓÒ£©
-            if (curr_row < L_edge_end_row || curr_row > IMGH - 1 || curr_row + 1 < L_edge_end_row)
+            if (curr_row < L_edge_end_row || curr_row > IMGH - 1 || curr_row - 1 < L_edge_end_row)
                 break;
 
-            if (curr_col > max_col-15 || curr_col < min_col)
+            if (curr_col > max_col-25 || curr_col < min_col)
             // if (curr_col - 23.0 / 47 * curr_row + 276.0 / 47 < 0 && curr_row < 59 - min_count)
             {
                 // if (++L_search_edge_count == 3)
@@ -654,9 +1055,9 @@ void Image_process(unsigned char image[][IMGW])
         for (int i = 1; i < R_search_amount; i++)
         {
             //Ô½½çÍË³ö ÐÐÔ½½çºÍÁÐÔ½½ç£¨ÏòÉÏÏòÏÂÏò×óÏòÓÒ£©
-            if (curr_row < L_edge_end_row || curr_row > IMGH - 1 || curr_row + 1 < L_edge_end_row)
+            if (curr_row < R_edge_end_row || curr_row > IMGH - 1 || curr_row - 1 < R_edge_end_row)
                 break;
-            if (curr_col > max_col || curr_col < min_col+15) //Á¬ÐøÈý´ÎËÑË÷µ½±ß½ç£¬ÍË³ö
+            if (curr_col > max_col || curr_col < min_col+25) //Á¬ÐøÈý´ÎËÑË÷µ½±ß½ç£¬ÍË³ö
             // if(curr_col+24.0/59*curr_row-88>0&&curr_row<59 - min_count)
             {
                 // if (++R_search_edge_count == 3)
@@ -1069,6 +1470,7 @@ int white_(int x) //ÅÐ¶Ï°×
  * ¡¾²Î    Êý¡¿£ºÈý¸öµãµÄÐÐÁÐ×ø±ê
  * ¡¾·µ »Ø Öµ¡¿£º½Ç¶ÈÖµ
  * ¡¾±¸    ×¢¡¿£ºÎÞ
+ *
  *--------------------------------------------------------------------------*/
 int Get_angle(int ax, int ay, int bx, int by, int cx, int cy)
 {
@@ -1115,6 +1517,11 @@ void get_mid(unsigned char image[][IMGW])
         L_edge[0].col = L_edge[1].col;
         R_edge[0].row = R_edge[1].row;
         R_edge[0].col = R_edge[1].col;
+        //wenhaoxianchuli
+        if(L_edge_count-R_edge_count>20&&L_edge_count>40)
+            L_edge_count=R_edge_count+10;
+        else if(R_edge_count-L_edge_count>20&&R_edge_count>40)
+            R_edge_count=L_edge_count+10;
         //×ó±ßÏß±ÈÓÒ±ßÏß³¤
         if (L_edge_count >= R_edge_count)
         {
@@ -1254,7 +1661,7 @@ void get_mid(unsigned char image[][IMGW])
             else
             {
                 K = 1.0 * sumUP / sumDown;
-                B = 1.0 * (sumY - K * sumX) / num;
+                B = 1.0 * (sumY - K  * sumX) / num;
             }
             for (int i = M_Line[Mid_count - 1].row; i > 0; i--) //¿ªÊ¼ÏòÉÏÄâºÏ
             {
@@ -1367,7 +1774,7 @@ int ercinh(struct EDGE *Line, int count)
     } while ((z1 > N1) || (z2 > N1) || (z3 > N1));
     //printf("a=%9.6f,\nb=%9.6f,\nc=%9.6f\n", al, bl, cl);
     //printf("ÄâºÏ·½³ÌÎª   y=%9.6fx*x+%9.6fx+%9.6f\n", al, bl, cl);
-    int y;
+    /*int y;
     int end = Line[count].row;
     int c = 0;
     for (i = Line[0].row; i >= end; i--)
@@ -1376,8 +1783,8 @@ int ercinh(struct EDGE *Line, int count)
         Line[c].row = i;
         Line[c].col = y;
         c++;
-    }
-    return c;
+    }*/
+    return al;
 }
 
 float get_pure_bias()
@@ -1386,23 +1793,67 @@ float get_pure_bias()
     float dir_bias_angle = 0.0; //方向差角度
     int row = 0;
     int col = 0;
-
     float s;
-    int k1=row_known_geti(K_MD,Mid_Line,Mid_count);
-    int k2=row_known_geti(K_MD-10,Mid_Line,Mid_count);
-    int k3=row_known_geti(K_MD+10,Mid_Line,Mid_count);
-    int k4=row_known_geti(K_MD-15,Mid_Line,Mid_count);
-    int k5=row_known_geti(K_MD-10,Mid_Line,Mid_count);
-    int k6=row_known_geti(K_MD,Mid_Line,Mid_count);
-    //int k = (int)(K_MD * Mid_count);
-    if (k2 == 0)
-        return 0;
-    row = 0.2*Mid_Line[k1].row+0.3*Mid_Line[k2].row+0.2*Mid_Line[k3].row+0.1*Mid_Line[k4].row+0.1*Mid_Line[k5].row+0.1*Mid_Line[k6].row;
-    col = 0.2*Mid_Line[k1].col+0.3*Mid_Line[k2].col+0.2*Mid_Line[k3].col+0.1*Mid_Line[k4].col+0.1*Mid_Line[k5].col+0.1*Mid_Line[k6].col;
+    if(K_MD==-1)
+    {
+        int temp_mid;
+        if(zhongxian-L_edge[2].col<R_edge[2].col-zhongxian)
+        {
+            temp_mid=L_edge[0].col+Road_Width/2;
+        }
+        else
+        {
+            temp_mid=R_edge[0].col-Road_Width/2;
+        }
+        dir_bias_angle = atan((temp_mid - zhongxian) / (L));//+往右移动 -往左移动
+        s = pid_solve(p_pama, dir_bias_angle);
+        return s;
 
-    dir_bias_angle = atan((col - IMGW / 2) / (row + L));
-    s = pid_solve(p_pama, dir_bias_angle);
-    // printf("%.5f",dir_bias_angle);
+    }
+
+
+    if(Mid_Line[Mid_count-1].row<10)
+    {
+        //K_MD-=5;
+
+        int k1=row_known_geti(K_MD,Mid_Line,Mid_count);
+        int k2=row_known_geti(K_MD-10,Mid_Line,Mid_count);
+        int k3=row_known_geti(K_MD+10,Mid_Line,Mid_count);
+        int k4=row_known_geti(K_MD-15,Mid_Line,Mid_count);
+        int k5=row_known_geti(K_MD-10,Mid_Line,Mid_count);
+        int k6=row_known_geti(K_MD,Mid_Line,Mid_count);
+        //int k = (int)(K_MD * Mid_count);
+        if (k4 == 0)
+            return 0;
+        row = 0.2*Mid_Line[k1].row+0.3*Mid_Line[k2].row+0.2*Mid_Line[k3].row+0.1*Mid_Line[k4].row+0.1*Mid_Line[k5].row+0.1*Mid_Line[k6].row+3;
+        col = 0.2*Mid_Line[k1].col+0.3*Mid_Line[k2].col+0.2*Mid_Line[k3].col+0.1*Mid_Line[k4].col+0.1*Mid_Line[k5].col+0.1*Mid_Line[k6].col;
+
+        dir_bias_angle = atan((col - zhongxian) / (59-row + L));//+往右移动 -往左移动
+        s = pid_solve(p_pama, dir_bias_angle);
+        // printf("%.5f",dir_bias_angle);
+        //K_MD+=5;
+    }
+    else
+    {
+        //K_MD-=3;
+        //float s;
+        int k1=row_known_geti(K_MD,Mid_Line,Mid_count);
+        int k2=row_known_geti(K_MD-10,Mid_Line,Mid_count);
+        int k3=row_known_geti(K_MD+10,Mid_Line,Mid_count);
+        int k4=row_known_geti(K_MD-15,Mid_Line,Mid_count);
+        int k5=row_known_geti(K_MD-10,Mid_Line,Mid_count);
+        int k6=row_known_geti(K_MD,Mid_Line,Mid_count);
+        //int k = (int)(K_MD * Mid_count);
+        if (k4 == 0)
+            return 0;
+        row = 0.2*Mid_Line[k1].row+0.3*Mid_Line[k2].row+0.2*Mid_Line[k3].row+0.1*Mid_Line[k4].row+0.1*Mid_Line[k5].row+0.1*Mid_Line[k6].row;
+        col = 0.2*Mid_Line[k1].col+0.3*Mid_Line[k2].col+0.2*Mid_Line[k3].col+0.1*Mid_Line[k4].col+0.1*Mid_Line[k5].col+0.1*Mid_Line[k6].col;
+
+        dir_bias_angle = atan((col - zhongxian) / (59-row + L));//+往右移动 -往左移动
+        s = pid_solve(p_pama, dir_bias_angle);
+        // printf("%.5f",dir_bias_angle);
+        //K_MD+=3;
+    }
 
     return s;
 }
@@ -1422,32 +1873,49 @@ float pid_solve(struct pid_param_t *pid, float error)
     // printf("%.5f",pid->out_p + pid->out_i + pid->out_d);
     return pid->out_p+pid->out_d;
 }
-void pid_init()
-{
-    pama.kp = 35;      // P记得幅值
-    pama.ki = 0;       // I
-    pama.kd = 30;      // D
-    pama.i_max = 1000; // integrator_max
-    pama.p_max = 1000; // integrator_max
-    pama.d_max = 1000; // integrator_max
-    pama.pre_error = 0;
-    pama.pre_pre_error = 0;
-}
+
 int motor_PID(int ECPULSE_SET, int ECPULSE_REAL, int *error_last_1, int *error_last_2, float KP, float KI, float KD, int *duty)
 {
+    static float Last_kd;
+    static int Lsat_duty;
+    //int siqu=100;
+    float cs_kd=1;
     int error;
     error = ECPULSE_SET - ECPULSE_REAL;
-    *duty += (int)(KP * (error - (*error_last_1)) + KI * error + KD * (error - 2 * (*error_last_1) + (*error_last_2)));
+    if(error>=100||error<=-100)
+        *duty += (int)(KP * (error - (*error_last_1))*cs_kd+Last_kd*(1-cs_kd) + KI * error + KD * (error - 2 * (*error_last_1) + (*error_last_2)));
+    else
+        *duty += (int)((KP * (error - (*error_last_1))*cs_kd+Last_kd*(1-cs_kd) + KI * error + KD * (error - 2 * (*error_last_1) + (*error_last_2))));
+
+    Last_kd=KP * (error - (*error_last_1));
+
     *error_last_2 = *error_last_1;
     *error_last_1 = error;
+
+    if(ECPULSE_SET==0)
+    {
+        if(error>50||error<-50)
+            *duty=KP*error;
+        else
+            *duty=0;
+    }
+
+
     if (*duty > duty_max)
     {
-        *duty = duty_max;
+         *duty = duty_max;
     }
-    if (*duty < 0)
+    if (*duty < -4000)
     {
-        *duty = 0;
+         *duty=-4000;
     }
+/*
+    if (Lsat_duty-*duty<siqu&&Lsat_duty-*duty>-siqu)
+        *duty=Lsat_duty;
+    else
+        Lsat_duty=*duty;*/
+
+
     return *duty;
 }
 
@@ -1518,8 +1986,20 @@ void line_check()
         LEFT_EDGE_type = 0;
     else if (L_edge[L_edge_count].row > 50)
         LEFT_EDGE_type = 1;
-    else if (L_edge[L_edge_count].col - L_edge[0].col > IMGW / 4)
-        LEFT_EDGE_type = 2;
+    else if (L_edge[L_edge_count].col - L_edge[0].col > IMGW / 4 && L_edge[L_edge_count-1].col-2*L_edge[L_edge_count/2].col+L_edge[0].col>-10)
+        {
+        if(L_edge[L_edge_count/2].row-L_edge[L_edge_count].row==0)
+            LEFT_EDGE_type = 4;
+        else
+            {
+            float k_wan=1.0*(L_edge[L_edge_count/2].col+L_edge[L_edge_count/2-1].col+L_edge[L_edge_count/2-2].col-L_edge[L_edge_count].col-L_edge[L_edge_count-1].col-L_edge[L_edge_count-2].col)/(L_edge[L_edge_count/2].row+L_edge[L_edge_count/2-1].row+L_edge[L_edge_count/2-2].row-L_edge[L_edge_count].row-L_edge[L_edge_count-1].row-L_edge[L_edge_count-2].row);
+            int col_wan=(int)(k_wan*(59-(L_edge[L_edge_count/2].row+L_edge[L_edge_count/2-1].row+L_edge[L_edge_count/2-2].row)/3)+(L_edge[L_edge_count/2].col+L_edge[L_edge_count/2-1].col+L_edge[L_edge_count/2-2].col)/3);
+            if (col_wan-L_edge[0].col<=12&&col_wan-L_edge[0].col>=-12&&L_edge[L_edge_count-1].row<15)
+                LEFT_EDGE_type = -1;
+            else
+                LEFT_EDGE_type = 2;
+            }
+        }
     else
     {
 
@@ -1543,8 +2023,20 @@ void line_check()
         RIGHT_EDGE_type = 0;
     else if (R_edge[R_edge_count].row > 50)
         RIGHT_EDGE_type = 1;
-    else if (R_edge[R_edge_count].col - R_edge[0].col < -IMGW / 4)
-        RIGHT_EDGE_type = 2;
+    else if (R_edge[R_edge_count].col - R_edge[0].col < -IMGW / 4 && R_edge[R_edge_count-1].col-2*R_edge[R_edge_count/2].col+R_edge[0].col<10)
+        {
+        if(R_edge[R_edge_count/2].row-R_edge[R_edge_count].row==0)
+            RIGHT_EDGE_type = 4;
+        else
+            {
+            float k_wan=1.0*(R_edge[R_edge_count/2].col+R_edge[R_edge_count/2-1].col+R_edge[R_edge_count/2-2].col-R_edge[R_edge_count].col-R_edge[R_edge_count-1].col-R_edge[R_edge_count-2].col)/(R_edge[R_edge_count/2].row+R_edge[R_edge_count/2-1].row+R_edge[R_edge_count/2-2].row-R_edge[R_edge_count].row-R_edge[R_edge_count-1].row-R_edge[R_edge_count-2].row);
+             int col_wan=(int)(k_wan*(59-(R_edge[R_edge_count/2].row+R_edge[R_edge_count/2-1].row+R_edge[R_edge_count/2-2].row)/3)+(R_edge[R_edge_count/2].col+R_edge[R_edge_count/2-1].col+R_edge[R_edge_count/2-2].col)/3);
+            if (col_wan-R_edge[0].col<=12&&col_wan-R_edge[0].col>=-12&&R_edge[R_edge_count-1].row<15)
+                RIGHT_EDGE_type = -1;
+            else
+                RIGHT_EDGE_type = 2;
+            }
+        }
     else
     {
 
@@ -1571,10 +2063,41 @@ void line_check()
 
 
 
-
         event_check();
+
         if(inelement==0)
         {
+            if(frame_after_zero<25&&pama_run.enable_jays==1)
+                ytdx_event_check();
+            if(frame_after_wandao<25&&pama_run.enable_jawd==1)
+                ytdx_event_check();
+        }
+
+        if(inelement==0)
+        {
+            if(RIGHT_EDGE_type==2&&LEFT_EDGE_type==2)
+            {
+                if(Lc.corner_flag&&L_edge[Lc.corner_icount+6].col>L_edge[Lc.corner_icount-6].col)
+                    {
+                        left_findflag = 0;
+                        LEFT_EDGE_type = 0;
+                    }
+                else if(Rc.corner_flag&&R_edge[Rc.corner_icount+6].col<R_edge[Rc.corner_icount-6].col)
+                    {
+                        right_findflag = 0;
+                        RIGHT_EDGE_type = 0;
+                    }
+                else if(L_edge[L_edge_count/2].row<L_edge[L_edge_count].row)
+                    {
+                        left_findflag = 0;
+                        LEFT_EDGE_type = 0;
+                    }
+                else if(R_edge[R_edge_count/2].row<R_edge[R_edge_count].row)
+                    {
+                        right_findflag = 0;
+                        RIGHT_EDGE_type = 0;
+                    }
+            }
             if (LEFT_EDGE_losscount < min_count + 3 && LEFT_EDGE_losscount > min_count - 3||RIGHT_EDGE_type==2)
             {
                 left_findflag = 0;
@@ -1602,7 +2125,7 @@ void line_check()
 
 void corner_find(struct EDGE line[], int dir, struct CORNER *cor, int count)
 {
-    int delt = 6;
+    int delt = 8;
     int temp = 0;
     if (count > 2 * delt + 1)
     {
@@ -1695,7 +2218,18 @@ void corner_find(struct EDGE line[], int dir, struct CORNER *cor, int count)
 void event_check() //事件判断
 {
 
-    if((RIGHT_EDGE_type==3)&&(LEFT_EDGE_type==3))//双拐 三岔或十字
+    if(check_pd())
+    {
+        inelement=6;
+        return;
+    }
+    xieru_flag=0;
+    if(check_bmx(30))
+    {
+        inelement=5;
+        return;
+    }
+    if((RIGHT_EDGE_type==3)&&(LEFT_EDGE_type==3))//双拐 三岔或十字 double
     {
         /*if(LEFT_EDGE_type==3)
         {
@@ -1705,24 +2239,201 @@ void event_check() //事件判断
                 inelement=1;//后续添加判断
         }*/
 
-        if(RIGHT_EDGE_type==3&&R_edge[Rc.corner_icount].row<10)
+        if(RIGHT_EDGE_type==3&&Rc.corner_row<25)
             return;
-        if(LEFT_EDGE_type==3&&L_edge[Lc.corner_icount].row<10)
+        if(LEFT_EDGE_type==3&&Lc.corner_row<25)
             return;
-        int flag=szorcd_check();
-        if(flag==3&&45<Lc.corner_angle&&Lc.corner_angle<90&&45<Rc.corner_angle&&Lc.corner_angle<90)
+        //int flag=szorcd_check();
+        /*
+        if(flag==3&&45<Lc.corner_angle&&Lc.corner_angle<90&&45<Rc.corner_angle&&Rc.corner_angle<90)
         inelement=3;
         if(flag==1&&60<Lc.corner_angle&&Lc.corner_angle<120&&60<Rc.corner_angle&&Rc.corner_angle<120)
         inelement=1;
+
+        */
+        if(45<lb_la&&lb_la<70&&45<lb_ra&&lb_ra<70&&lb_count_l>3&&lb_count_r>3)
+            inelement=3;
+        if(70<lb_la&&lb_la<105&&70<lb_ra&&lb_ra<105&&lb_count_l>3&&lb_count_r>3)
+            inelement=1;
         return;
     }
-    if((LEFT_EDGE_type==-1||LEFT_EDGE_type==0)&&RIGHT_EDGE_type==3)//车库或圆环
+
+
+    if(LEFT_EDGE_type==-1&&RIGHT_EDGE_type==3||LEFT_EDGE_type==3&&RIGHT_EDGE_type==-1)//right yh
     {
-        if(Rc.corner_row>35)
-            if(Lc.corner_flag==0&&uLc.corner_flag==0)
-                inelement=2;
+
+        if(Rc.corner_flag)
+        {
+            if(lb_ra>75&lb_ra<140&&Rc.corner_row>25&&lb_count_r>3&&uLc.corner_flag==0)
+                if(Lc.corner_flag==0&&uLc.corner_flag==0)
+                {
+                    inelement=2;
+                    process_yh(1);
+                    return;
+                }
+
+        }
+
+        if(Lc.corner_flag)
+        {
+            if(lb_la>75&&lb_la<140&&Lc.corner_row>25&&lb_count_l>3&&uRc.corner_flag==0)
+                if(Rc.corner_flag==0&&uRc.corner_flag==0)
+                {
+                    inelement=2;
+                    process_yh(11);
+                    return;
+                }
+        }
+
+
+    }
+
+
+    if((RIGHT_EDGE_type==3)||(LEFT_EDGE_type==3))//双拐 三岔或十字 single
+    {
+
+
+        xieru_flag=3;
+        if(RIGHT_EDGE_type==3&&(Rc.corner_row<30||Rc.corner_row>50))
+            return;
+        if(LEFT_EDGE_type==3&&(Lc.corner_row<30||Lc.corner_row>50))
+            return;
+        if(RIGHT_EDGE_type==3&&lb_count_r<=3)
+            return;
+        if(LEFT_EDGE_type==3&&lb_count_l<=3)
+            return;
+
+        if(Lc.corner_flag)
+        {
+            int t=Lc.corner_icount;
+            while(t-5>0)
+            {
+                if(L_edge[t].col<L_edge[t-5].col)
+                    return;
+                t=t-3;
+            }
+        }
+        if(Rc.corner_flag)
+        {
+            int t=Rc.corner_icount;
+            while(t-5>0)
+            {
+                if(R_edge[t].col>R_edge[t-5].col)
+                    return;
+                t=t-3;
+            }
+        }
+
+
+        if(Lc.corner_flag)
+        {
+            int c1=0;
+            int c2=0;
+            int temp_i=1;
+            while(white_(ooutput[Lc.corner_row][Lc.corner_col-temp_i]))
+            {
+                temp_i++;
+                c1++;
+            }
+            temp_i=1;
+            while(white_(ooutput[Lc.corner_row][Lc.corner_col+temp_i]))
+            {
+                temp_i++;
+                c1++;
+            }
+            temp_i=1;
+            while(white_(ooutput[Lc.corner_row-5][Lc.corner_col-temp_i]))
+            {
+                temp_i++;
+                c2++;
+            }
+            temp_i=1;
+            while(white_(ooutput[Lc.corner_row-5][Lc.corner_col+temp_i]))
+            {
+                temp_i++;
+                c2++;
+            }
+            if(c2-c1<4)
+                return;
+        }
+        if(Rc.corner_flag)
+        {
+            int c1=0;
+            int c2=0;
+            int temp_i=1;
+            while(white_(ooutput[Rc.corner_row][Rc.corner_col-temp_i]))
+            {
+                temp_i++;
+                c1++;
+            }
+            temp_i=1;
+            while(white_(ooutput[Rc.corner_row][Rc.corner_col+temp_i]))
+            {
+                temp_i++;
+                c1++;
+            }
+            temp_i=1;
+            while(white_(ooutput[Rc.corner_row-5][Rc.corner_col-temp_i]))
+            {
+                temp_i++;
+                c2++;
+            }
+            temp_i=1;
+            while(white_(ooutput[Rc.corner_row-5][Rc.corner_col+temp_i]))
+            {
+                temp_i++;
+                c2++;
+            }
+            if(c2-c1<4)
+                return;
+        }
+
+        if(Lc.corner_flag&&40<lb_la&&lb_la<70&&lb_count_l>3||Rc.corner_flag&&40<lb_ra&&lb_ra<70&&lb_count_r>3)
+        {
+            /*int erciangle;
+            if(Lc.corner_flag)
+            {   if(Lc.corner_icount+10>L_edge_count)
+                    erciangle=Get_angle(L_edge[Lc.corner_icount-10].row,L_edge[Lc.corner_icount-10].col,L_edge[Lc.corner_icount].row,L_edge[Lc.corner_icount].col,L_edge[L_edge_count-1].row,L_edge[L_edge_count-1].col);
+                else if(Lc.corner_icount-10<0)
+                    erciangle=Get_angle(L_edge[0].row,L_edge[0].col,L_edge[Lc.corner_icount].row,L_edge[Lc.corner_icount].col,L_edge[Lc.corner_icount+10].row,L_edge[Lc.corner_icount+10].col);
+                else
+                    erciangle=Get_angle(L_edge[Lc.corner_icount-10].row,L_edge[Lc.corner_icount-10].col,L_edge[Lc.corner_icount].row,L_edge[Lc.corner_icount].col,L_edge[Lc.corner_icount+10].row,L_edge[Lc.corner_icount+10].col);
+
+                if(erciangle<70)
+                    inelement=3;
+                else
+                    inelement=1;
+            }
+            if(Rc.corner_flag)
+            {
+                if(Rc.corner_icount+10>R_edge_count)
+                    erciangle=Get_angle(R_edge[Rc.corner_icount-10].row,R_edge[Rc.corner_icount-10].col,R_edge[Rc.corner_icount].row,R_edge[Rc.corner_icount].col,R_edge[R_edge_count-1].row,R_edge[R_edge_count-1].col);
+
+                else if(Rc.corner_icount-10<0)
+                    erciangle=Get_angle(R_edge[0].row,R_edge[0].col,R_edge[Rc.corner_icount].row,R_edge[Rc.corner_icount].col,R_edge[Rc.corner_icount+10].row,R_edge[Rc.corner_icount+10].col);
+                else
+                    erciangle=Get_angle(R_edge[Rc.corner_icount-10].row,R_edge[Rc.corner_icount-10].col,R_edge[Rc.corner_icount].row,R_edge[Rc.corner_icount].col,R_edge[Rc.corner_icount+10].row,R_edge[Rc.corner_icount+10].col);
+                if(erciangle<70)
+                    inelement=3;
+                else
+                    inelement=1;
+            }*/
+            inelement=3;
+
+        }
+
+        else if(Rc.corner_flag&&70<lb_ra&&lb_ra<105&&lb_count_r>3||Lc.corner_flag&&70<lb_la&&lb_la<105&&lb_count_l>3)
+            inelement=1;
+        else if(Rc.corner_flag&&105<lb_ra&&lb_ra<130&&lb_count_r>3||Lc.corner_flag&&105<lb_la&&lb_la<130&&lb_count_l>3)
+            inelement=1;//2
+        if(Lc.corner_flag)
+            xieru_flag=1;
+        else if(Rc.corner_flag)
+            xieru_flag=2;
         return;
     }
+
+
 
 }
 int row_known_geti(int row,struct EDGE line[], int count)
@@ -1745,29 +2456,315 @@ void process_element()
     {
         case 1:process_sz();break;
 
-        case 2:process_yh();break;
+        case 2:process_yh(0);break;
 
         case 3:process_cd();break;
+
+        case 4:process_dzl();break;
+
+        case 5:process_bmx(0);break;
+
+        case 6:process_pd();break;
+
+        case 99:process_ck(2);break;
+
+        case 98:process_rk(2);break;
     }
 
 }
+
+void process_pd()
+{
+    static int pdstate;
+    static int kmdsave;
+    if(pdstate==0)
+    {
+
+        static int count_pd;
+
+        if(distc<500)
+        {
+            inelement=0;
+            count_pd=0;
+        }
+        if(distc>1000)
+        {
+            count_pd++;
+        }
+        if(count_pd>=2)
+        {
+            count_pd=0;
+            pdstate=1;
+            kmdsave=K_MD;
+            K_MD=55;
+            jjjs(7);
+
+        }
+    }
+
+    if(pdstate==1)
+    {
+        if(Pitch>8&&distc<1000)
+          pdstate=2;
+    }
+    if(pdstate==2)
+    {
+        if(Pitch<-8||distc>1000)
+            pdstate=3;
+    }
+
+    if(pdstate==3)
+    {
+        if (Pitch>-5&&distc<500)
+            pdstate=4;
+    }
+    ti=pdstate;
+    if(pdstate==1)
+    {
+        ;
+    }
+    if(pdstate==2)
+    {
+       //K_MD=10;
+        SPEED_SET=pama_run.pdspeed;
+    }
+    if (pdstate==3)
+    {
+        K_MD=kmdsave;
+        SPEED_SET=pama_run.speed_set;
+        if(RIGHT_EDGE_type==2&&LEFT_EDGE_type==2)
+        {
+            if(Lc.corner_flag&&L_edge[Lc.corner_icount+6].col>L_edge[Lc.corner_icount-6].col)
+                {
+                    left_findflag = 0;
+                    LEFT_EDGE_type = 0;
+                }
+            else if(Rc.corner_flag&&R_edge[Rc.corner_icount+6].col<R_edge[Rc.corner_icount-6].col)
+                {
+                    right_findflag = 0;
+                    RIGHT_EDGE_type = 0;
+                }
+            else if(L_edge[L_edge_count/2].row<L_edge[L_edge_count].row)
+                {
+                    left_findflag = 0;
+                    LEFT_EDGE_type = 0;
+                }
+            else if(R_edge[R_edge_count/2].row<R_edge[R_edge_count].row)
+                {
+                    right_findflag = 0;
+                    RIGHT_EDGE_type = 0;
+                }
+        }
+        if (LEFT_EDGE_losscount < min_count + 3 && LEFT_EDGE_losscount > min_count - 3||RIGHT_EDGE_type==2)
+        {
+            left_findflag = 0;
+            LEFT_EDGE_type = 0;
+        }
+
+        if (RIGHT_EDGE_losscount < min_count + 3 && RIGHT_EDGE_losscount > min_count - 3||LEFT_EDGE_type==2)
+        {
+            right_findflag = 0;
+            RIGHT_EDGE_type = 0;
+        }
+
+        //´æÔÚÄ³Ò»±ß½ç£¬¿ªÆôÖÐÏßÄâºÏ*/
+        if (LEFT_EDGE_type == 0)
+            L_edge_count = 0;
+        if (RIGHT_EDGE_type == 0)
+            R_edge_count = 0;
+    }
+    if (pdstate==4)
+    {
+        //K_MD=kmdsave;
+        SPEED_SET=pama_run.speed_set;
+
+        pdstate=0;
+        inelement=0;
+    }
+
+}
+void process_bmx(int pre_state)
+{
+    static int bmxstate;
+    if(pre_state!=0)
+        bmxstate=pre_state;
+    if(bmxstate==0)
+    {
+        if(LEFT_EDGE_type==0&&RIGHT_EDGE_type==-1||Lc.corner_flag==1&&Rc.corner_flag==0)
+            bmxstate=1;
+        else if(LEFT_EDGE_type==-1&&RIGHT_EDGE_type==0||Rc.corner_flag==1&&Lc.corner_flag==0)
+            bmxstate=11;
+    }
+    if(bmxstate==1||bmxstate==11)
+    {
+        bmxstate++;
+        bmx_number++;
+        if(bmx_number==pama_run.rucs)
+        {
+            //bmxstate=0;
+            inelement=98;
+            if(bmxstate==2)
+            {
+                bmxstate=0;
+                process_rk(0);
+                return;
+            }
+            else if(bmxstate==12)
+            {
+                bmxstate=0;
+                process_rk(1);
+                return;
+            }
+        }
+    }
+    if(bmxstate==2||bmxstate==12)
+    {
+        int i=10;
+        while(check_bmx(i)==0&&i<=59)
+        {
+            i++;
+        }
+        if(i!=60)
+            bmxstate++;
+    }
+    if(bmxstate==3||bmxstate==13)
+    {
+        int i=10;
+        while(check_bmx(i)==0&&i<=59)
+        {
+            i++;
+        }
+        if(i==60)
+            bmxstate++;
+    }
+
+    if(bmxstate==4||bmxstate==14)
+    {
+        if(Lc.corner_flag==0&&Rc.corner_flag==0&&uLc.corner_flag==0&&uRc.corner_flag==0&&lb_count_l==0&&lb_count_r==0)
+            bmxstate++;
+    }
+
+
+
+    ti=bmxstate;
+
+    if(bmxstate<10&&bmxstate>0)
+    {
+        left_findflag = 0;
+        LEFT_EDGE_type = 0;
+        L_edge_count = 0;
+    }
+    if(bmxstate>10)
+    {
+        right_findflag = 0;
+        RIGHT_EDGE_type = 0;
+        R_edge_count = 0;
+    }
+
+    if(bmxstate==5||bmxstate==15)
+    {
+        bmxstate=0;
+        inelement=0;
+        //bmx_number++;
+    }
+
+}
+
 void process_sz()
 {
     static int szstate;
     if(szstate==0)
-    {   //SPEED_SET=550;
-        if(LEFT_EDGE_type==0&&RIGHT_EDGE_type==0)
-            {szstate=1;}
+    {
+        /*if(LEFT_EDGE_type==0&&RIGHT_EDGE_type==0)
+            {szstate=1;}*/
+        static int cross_flag=0;
+        int c1=0;
+        int temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47-temp_i])||white_(ooutput[40][47-temp_i-1])||white_(ooutput[40][47-temp_i-2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47+temp_i])||white_(ooutput[40][47+temp_i+1])||white_(ooutput[40][47+temp_i+2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        if(cross_flag==0&&c1>46)
+            cross_flag=1;
+        if(cross_flag==1&&c1<40)
+        {
+            cross_flag=0;
+            szstate=1;
+        }
+
+        if(check_sz2yh()==1)//sz zhuan yh
+        {
+            if(xieru_flag==1)
+            {
+                inelement=2;
+                process_yh(11);
+                cross_flag=0;
+                szstate=0;
+                return;
+            }
+            else if(xieru_flag==2)
+            {
+                inelement=2;
+                process_yh(1);
+                szstate=0;
+                cross_flag=0;
+                return;
+            }
+        }
     }
 
     if(szstate==1)
     {
+        szstate=5;
+        /*
+        static int lxflag=0;
         if(LEFT_EDGE_type==2)
         {
-            szstate=2;
+            lxflag++;
+            if(lxflag==3)
+            {
+                szstate=2;
+                lxflag=0;
+            }
+
+
         }
+        else if(RIGHT_EDGE_type==2)
+        {
+
+            lxflag--;
+            if(lxflag==-3)
+            {
+                szstate=12;
+                lxflag=0;
+            }
+
+
+
+        }
+        else
+            lxflag=0;*/
     }
-    if(szstate==2)
+    if(szstate==2)//right sz
     {
         if(Lc.corner_flag&&Lc.corner_angle>60&&Lc.corner_angle<120&&Lc.corner_row>20)
         {
@@ -1776,24 +2773,157 @@ void process_sz()
     }
     if(szstate==3)
     {
-        if(LEFT_EDGE_type==0&&LEFT_EDGE_type==0)
-            {szstate=4;}
+        int c1=0;
+        int temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47-temp_i])||white_(ooutput[40][47-temp_i-1])||white_(ooutput[40][47-temp_i-2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47+temp_i])||white_(ooutput[40][47+temp_i+1])||white_(ooutput[40][47+temp_i+2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        if(c1>46)
+            szstate=4;
     }
     if(szstate==4)
     {
-        if(LEFT_EDGE_type==-1&&LEFT_EDGE_type==-1)
-            {szstate=5;}
+        int c1=0;
+        int temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47-temp_i])||white_(ooutput[40][47-temp_i-1])||white_(ooutput[40][47-temp_i-2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47+temp_i])||white_(ooutput[40][47+temp_i+1])||white_(ooutput[40][47+temp_i+2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        if(c1<40)
+            szstate=5;
     }
+
+    if(szstate==12)//keft sz
+    {
+        if(Rc.corner_flag&&Rc.corner_angle>60&&Rc.corner_angle<120&&Rc.corner_row>20)
+        {
+            szstate=13;
+        }
+    }
+    if(szstate==13)
+    {
+        //static int cross_flag=0;
+        int c1=0;
+        int temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47-temp_i])||white_(ooutput[40][47-temp_i-1])||white_(ooutput[40][47-temp_i-2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47+temp_i])||white_(ooutput[40][47+temp_i+1])||white_(ooutput[40][47+temp_i+2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        if(c1>46)
+            szstate=14;
+
+
+
+        /*if(LEFT_EDGE_type==0&&RIGHT_EDGE_type==0)
+            {szstate=14;}*/
+    }
+    if(szstate==14)
+    {
+        int c1=0;
+        int temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47-temp_i])||white_(ooutput[40][47-temp_i-1])||white_(ooutput[40][47-temp_i-2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47+temp_i])||white_(ooutput[40][47+temp_i+1])||white_(ooutput[40][47+temp_i+2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        if(c1<40)
+            szstate=15;
+    }
+
 
     if(szstate==0||szstate==1)
     {
+
+
+
+
+
+
+
         if(Lc.corner_flag&&uLc.corner_flag)
         {
             spot2spot(ooutput,Lc.corner_row,Lc.corner_col,uLc.corner_row,uLc.corner_col);
         }
         else if(Lc.corner_flag&&!uLc.corner_flag)
         {
-            spot2spot(ooutput,Lc.corner_row,Lc.corner_col,2,Lc.corner_col);
+            //spot2spot(ooutput,Lc.corner_row,Lc.corner_col,2,Lc.corner_col);
+            simple_bu(0);
         }
         else if(!Lc.corner_flag&&uLc.corner_flag)
         {
@@ -1801,7 +2931,27 @@ void process_sz()
         }
         else
         {
-            spot2spot(ooutput,2,25,58,25);
+            //spot2spot(ooutput,2,25,58,25);
+            int t=Lc.corner_icount;
+            int buxianflag=0;
+            while(t-5>0)
+            {
+                if(L_edge[t].col-L_edge[t-5].col>3||L_edge[t].col-L_edge[t-5].col<-3)
+                    buxianflag=1;
+                t=t-5;
+            }
+            if(buxianflag==0)
+                simple_bu(2);
+            else
+                spot2spot(ooutput,2,25,58,25);
+           /* if(xieru_flag==1)
+            {
+                left_findflag = 0;
+                LEFT_EDGE_type = 0;
+                L_edge_count = 0;
+            }*/
+
+
         }
         if(Rc.corner_flag&&uRc.corner_flag)
         {
@@ -1809,7 +2959,8 @@ void process_sz()
         }
         else if(Rc.corner_flag&&!uRc.corner_flag)
         {
-            spot2spot(ooutput,Rc.corner_row,Rc.corner_col,2,Rc.corner_col);
+            //spot2spot(ooutput,Rc.corner_row,Rc.corner_col,2,Rc.corner_col);
+            simple_bu(1);
         }
         else if(!Rc.corner_flag&&uRc.corner_flag)
         {
@@ -1817,9 +2968,44 @@ void process_sz()
         }
         else
         {
-            spot2spot(ooutput,2,60,58,60);
+            //spot2spot(ooutput,2,60,58,60);
+            //simple_bu(3);
+            int t=Rc.corner_icount;
+            int buxianflag=0;
+            while(t-5>0)
+            {
+                if(R_edge[t].col-R_edge[t-5].col>3||R_edge[t].col-R_edge[t-5].col<-3)
+                    buxianflag=1;
+                t=t-5;
+            }
+            if(buxianflag==0)
+                simple_bu(3);
+            else
+                spot2spot(ooutput,2,60,58,60);
+           /* if(xieru_flag==2)
+            {
+                right_findflag = 0;
+                RIGHT_EDGE_type = 0;
+                R_edge_count = 0;
+            }*/
         }
+        L_edge_end_row = 1;              //×ó±ß½çÐÐ½áÊøµã
+        R_edge_end_row = 1;
         Image_process(ooutput);
+        L_edge_end_row = 5;              //×ó±ß½çÐÐ½áÊøµã
+        R_edge_end_row = 5;
+        if(xieru_flag==2&&!Rc.corner_flag&&!uRc.corner_flag)
+        {
+            right_findflag = 0;
+            RIGHT_EDGE_type = 0;
+            R_edge_count = 0;
+        }
+        else if(xieru_flag==1&&!Lc.corner_flag&&!uLc.corner_flag)
+        {
+            left_findflag = 0;
+            LEFT_EDGE_type = 0;
+            L_edge_count = 0;
+        }
     }
     if(szstate==2)
     {
@@ -1835,7 +3021,8 @@ void process_sz()
         }
         else if(Lc.corner_flag&&!uLc.corner_flag)
         {
-            spot2spot(ooutput,Lc.corner_row,Lc.corner_col,3,80);
+            //spot2spot(ooutput,Lc.corner_row,Lc.corner_col,3,80);
+            simple_bu(0);
         }
         else if(!Lc.corner_flag&&uLc.corner_flag)
         {
@@ -1843,7 +3030,8 @@ void process_sz()
         }
         else
         {
-            spot2spot(ooutput,2,21,58,21);
+            //spot2spot(ooutput,2,21,58,21);
+            simple_bu(2);
         }
         if(Rc.corner_flag&&uRc.corner_flag)
         {
@@ -1851,7 +3039,8 @@ void process_sz()
         }
         else if(Rc.corner_flag&&!uRc.corner_flag)
         {
-            spot2spot(ooutput,Rc.corner_row,Rc.corner_col,1,Rc.corner_col);
+            //spot2spot(ooutput,Rc.corner_row,Rc.corner_col,3,16);
+            simple_bu(1);
         }
         else if(!Rc.corner_flag&&uRc.corner_flag)
         {
@@ -1859,9 +3048,29 @@ void process_sz()
         }
         else
         {
-            spot2spot(ooutput,2,66,58,66);
+            //spot2spot(ooutput,2,66,58,66);
+            simple_bu(3);
         }
+
+
+        L_edge_end_row = 1;              //×ó±ß½çÐÐ½áÊøµã
+        R_edge_end_row = 1;
         Image_process(ooutput);
+        L_edge_end_row = 5;              //×ó±ß½çÐÐ½áÊøµã
+        R_edge_end_row = 5;
+
+        if(Lc.corner_flag||uLc.corner_flag&&!Rc.corner_flag&&!uRc.corner_flag)
+        {
+            right_findflag = 0;
+            RIGHT_EDGE_type = 0;
+            R_edge_count = 0;
+        }
+        if(Rc.corner_flag||uRc.corner_flag&&!Lc.corner_flag&&!uLc.corner_flag)
+        {
+            left_findflag = 0;
+            LEFT_EDGE_type = 0;
+            L_edge_count = 0;
+        }
     }
     if(szstate==4)
     {
@@ -1871,7 +3080,7 @@ void process_sz()
         }
         else if(Lc.corner_flag&&!uLc.corner_flag)
         {
-            spot2spot(ooutput,Lc.corner_row,Lc.corner_col,3,80);
+            spot2spot(ooutput,Lc.corner_row,Lc.corner_col,3,60);
         }
         else if(!Lc.corner_flag&&uLc.corner_flag)
         {
@@ -1887,7 +3096,7 @@ void process_sz()
         }
         else if(Rc.corner_flag&&!uRc.corner_flag)
         {
-            spot2spot(ooutput,Rc.corner_row,Rc.corner_col,1,Rc.corner_col);
+            spot2spot(ooutput,Rc.corner_row,Rc.corner_col,3,36);
         }
         else if(!Rc.corner_flag&&uRc.corner_flag)
         {
@@ -1897,7 +3106,26 @@ void process_sz()
         {
             spot2spot(ooutput,2,66,58,66);
         }
+
+        L_edge_end_row = 1;              //×ó±ß½çÐÐ½áÊøµã
+        R_edge_end_row = 1;
         Image_process(ooutput);
+        L_edge_end_row = 5;              //×ó±ß½çÐÐ½áÊøµã
+        R_edge_end_row = 5;
+        if(Lc.corner_flag||uLc.corner_flag&&!Rc.corner_flag&&!uRc.corner_flag)
+        {
+            right_findflag = 0;
+            RIGHT_EDGE_type = 0;
+            R_edge_count = 0;
+        }
+        if(Rc.corner_flag||uRc.corner_flag&&!Lc.corner_flag&&!uLc.corner_flag)
+        {
+            left_findflag = 0;
+            LEFT_EDGE_type = 0;
+            L_edge_count = 0;
+        }
+
+
     }
     if(szstate==5)
     {
@@ -1905,45 +3133,345 @@ void process_sz()
         inelement=0;
 
     }
+
+
+    if(szstate==12)
+    {
+        left_findflag = 0;
+        LEFT_EDGE_type = 0;
+        L_edge_count = 0;
+    }
+    if(szstate==13)
+    {
+        if(Lc.corner_flag&&uLc.corner_flag)
+        {
+            spot2spot(ooutput,Lc.corner_row,Lc.corner_col,uLc.corner_row,uLc.corner_col);
+        }
+        else if(Lc.corner_flag&&!uLc.corner_flag)
+        {
+            //spot2spot(ooutput,Lc.corner_row,Lc.corner_col,3,80);
+            simple_bu(0);
+        }
+        else if(!Lc.corner_flag&&uLc.corner_flag)
+        {
+            spot2spot(ooutput,uLc.corner_row,uLc.corner_col,59,21);
+        }
+        else
+        {
+            //spot2spot(ooutput,2,21,58,21);
+            simple_bu(2);
+        }
+        if(Rc.corner_flag&&uRc.corner_flag)
+        {
+            spot2spot(ooutput,Rc.corner_row,Rc.corner_col,uRc.corner_row,uRc.corner_col);
+        }
+        else if(Rc.corner_flag&&!uRc.corner_flag)
+        {
+            //spot2spot(ooutput,Rc.corner_row,Rc.corner_col,3,16);
+            simple_bu(1);
+        }
+        else if(!Rc.corner_flag&&uRc.corner_flag)
+        {
+            spot2spot(ooutput,uRc.corner_row,uRc.corner_col,58,66);
+        }
+        else
+        {
+            //spot2spot(ooutput,2,66,58,66);
+            simple_bu(3);
+        }
+
+        L_edge_end_row = 1;              //×ó±ß½çÐÐ½áÊøµã
+        R_edge_end_row = 1;
+        Image_process(ooutput);
+        L_edge_end_row = 5;              //×ó±ß½çÐÐ½áÊøµã
+        R_edge_end_row = 5;
+        if(Lc.corner_flag||uLc.corner_flag&&!Rc.corner_flag&&!uRc.corner_flag)
+        {
+            right_findflag = 0;
+            RIGHT_EDGE_type = 0;
+            R_edge_count = 0;
+        }
+        if(Rc.corner_flag||uRc.corner_flag&&!Lc.corner_flag&&!uLc.corner_flag)
+        {
+            left_findflag = 0;
+            LEFT_EDGE_type = 0;
+            L_edge_count = 0;
+        }
+    }
+    if(szstate==14)
+    {
+        if(Lc.corner_flag&&uLc.corner_flag)
+        {
+            spot2spot(ooutput,Lc.corner_row,Lc.corner_col,uLc.corner_row,uLc.corner_col);
+        }
+        else if(Lc.corner_flag&&!uLc.corner_flag)
+        {
+            spot2spot(ooutput,Lc.corner_row,Lc.corner_col,3,60);
+        }
+        else if(!Lc.corner_flag&&uLc.corner_flag)
+        {
+            spot2spot(ooutput,uLc.corner_row,uLc.corner_col,59,21);
+        }
+        else
+        {
+            spot2spot(ooutput,2,21,58,21);
+        }
+        if(Rc.corner_flag&&uRc.corner_flag)
+        {
+            spot2spot(ooutput,Rc.corner_row,Rc.corner_col,uRc.corner_row,uRc.corner_col);
+        }
+        else if(Rc.corner_flag&&!uRc.corner_flag)
+        {
+            spot2spot(ooutput,Rc.corner_row,Rc.corner_col,3,36);
+        }
+        else if(!Rc.corner_flag&&uRc.corner_flag)
+        {
+           spot2spot(ooutput,uRc.corner_row,uRc.corner_col,58,66);
+        }
+        else
+        {
+            spot2spot(ooutput,2,66,58,66);
+        }
+
+        L_edge_end_row = 1;              //×ó±ß½çÐÐ½áÊøµã
+        R_edge_end_row = 1;
+        Image_process(ooutput);
+        L_edge_end_row = 5;              //×ó±ß½çÐÐ½áÊøµã
+        R_edge_end_row = 5;
+        if(Lc.corner_flag||uLc.corner_flag&&!Rc.corner_flag&&!uRc.corner_flag)
+        {
+            right_findflag = 0;
+            RIGHT_EDGE_type = 0;
+            R_edge_count = 0;
+        }
+        if(Rc.corner_flag||uRc.corner_flag&&!Lc.corner_flag&&!uLc.corner_flag)
+        {
+            left_findflag = 0;
+            LEFT_EDGE_type = 0;
+            L_edge_count = 0;
+        }
+    }
+    if(szstate==15)
+    {
+        szstate=0;
+        inelement=0;
+
+    }
     ti=szstate;
 }
-
 void process_cd(){
     static int cdstate;
+    static float cd_Yaw;
+    static float det_Yaw;
     if(cdstate==0)
     {
-        if(Lc.corner_row>45||Rc.corner_row>45)
-            cdstate=1;
+        if(Lc.corner_row>40||Rc.corner_row>40)
+
+            if(bmx_number%2==0)//改这里能让他先左转还是先右转以及一直右转或一直左转
+                {
+                cdstate=1;
+                cd_Yaw=Yaw;
+                }
+            else if(number_cd%2==1)
+                {
+                cdstate=11;
+                cd_Yaw=Yaw;
+                }
     }
 
     if(cdstate==1)
     {
-        if(RIGHT_EDGE_type==-1&&LEFT_EDGE_type==-1||LEFT_EDGE_type==2)
+        static int lxflag;
+        int count=0;
+        int i;
+        for(i=20;i<=59;i++)
+        {
+            if(ooutput[i][70]==1)//white
+                count++;
+        }
+
+
+        det_Yaw=Yaw-cd_Yaw;
+        if ( det_Yaw<-180)
+            det_Yaw=360+det_Yaw;
+        else if(det_Yaw>180)
+            det_Yaw=-360+det_Yaw;
+
+
+
+        if(det_Yaw>50||det_Yaw<-50)//det值大于50直接退出
+        {
+            lxflag=0;
             cdstate=2;
+        }
+        if(count<4&&RIGHT_EDGE_type !=0&&LEFT_EDGE_type !=0)
+        {
+            lxflag++;
+            if(lxflag>=2&&(det_Yaw>25||det_Yaw<-25))
+            {
+
+                lxflag=0;
+                cdstate=2;
+            }
+
+
+        }
+        else
+            lxflag=0;
+        /*
+        if(Lc.corner_flag==0&&Rc.corner_flag==0&&uLc.corner_flag==0&&uRc.corner_flag==0&&RIGHT_EDGE_type !=0)
+        {
+            lxflag++;
+            if(lxflag==3||lxflag==-1)
+            {
+                lxflag=-1;
+                if(R_edge[row_known_geti(40,R_edge,R_edge_count)].col-L_edge[row_known_geti(40,L_edge,L_edge_count)].col <50)
+                {
+                    int count=0;
+                    int i;
+                    for(i=0;i<=59;i++)
+                    {
+                        if(ooutput[i][85]==1)//white
+                            count++;
+                    }
+                    if(count<3)
+                    cdstate=2;
+                    lxflag=0;
+                }
+            }
+
+
+        }
+        else if(lxflag!=-1)
+            lxflag=0;
+
+            */
     }
-
-
-
-
     if(cdstate==2)
     {
-        if((Lc.corner_flag&&Lc.corner_row>25)||(Rc.corner_flag&&Rc.corner_row>25))
-            cdstate=3;
+        inelement=0;
+        cdstate=0;
+        number_cd++;
+        //if((Lc.corner_flag&&Lc.corner_row>15&&lb_la<75&&lb_count_l>=3)||(Rc.corner_flag&&Rc.corner_row>15)&&lb_ra<75&&lb_count_r>=3)//&&lb_count_l>=3
+        //    cdstate=3;
     }
+
+
+
+
+/*
     if(cdstate==3)
     {
-        if(Lc.corner_row>45||Rc.corner_row>45)
+        if(Lc.corner_row>40&&lb_count_l>=3||Rc.corner_row>40&&lb_count_r>=3)
             cdstate=4;
         //SPEED_SET=400;
     }
     if(cdstate==4){
-        if(LEFT_EDGE_type==-1&&RIGHT_EDGE_type==2)
+        static int lxflag=0;
+        if(Lc.corner_flag==0&&uLc.corner_flag==0&&uRc.corner_flag==0&&Rc.corner_flag==0&&RIGHT_EDGE_type !=0&&LEFT_EDGE_type !=0)
         {
-            cdstate=0;
-            inelement=0;
+
+            if(R_edge[row_known_geti(40,R_edge,R_edge_count)].col-L_edge[row_known_geti(40,L_edge,L_edge_count)].col <36)
+            {
+                cdstate=0;
+                inelement=0;
+            }
+
+            lxflag++;
+            if(lxflag==3||lxflag==-1)
+            {
+                lxflag=-1;
+                if(R_edge[row_known_geti(40,R_edge,R_edge_count)].col-L_edge[row_known_geti(40,L_edge,L_edge_count)].col <45)
+                {
+                    cdstate=0;
+                    inelement=0;
+                    lxflag=0;
+                }
+
+            }
+
+
 
         }
+        else if(lxflag!=-1)
+            lxflag=0;
     }
+*/
+    if(cdstate==11)
+       {
+           static int lxflag;
+           int count=0;
+           int i;
+           for(i=20;i<=59;i++)
+           {
+               if(ooutput[i][70]==1)//white
+                   count++;
+           }
+
+           det_Yaw=Yaw-cd_Yaw;
+           if ( det_Yaw<-180)
+               det_Yaw=360+det_Yaw;
+           else if(det_Yaw>180)
+               det_Yaw=-360+det_Yaw;
+
+
+
+           if(det_Yaw>50||det_Yaw<-50)
+           {
+               lxflag=0;
+               cdstate=12;
+           }
+           if(count<4&&RIGHT_EDGE_type !=0&&LEFT_EDGE_type !=0)
+           {
+               lxflag++;
+               if(lxflag==2&&(det_Yaw>25||det_Yaw<-25))
+               {
+
+                   lxflag=0;
+                   cdstate=12;
+               }
+
+
+           }
+           else
+               lxflag=0;
+           /*
+           if(Lc.corner_flag==0&&Rc.corner_flag==0&&uLc.corner_flag==0&&uRc.corner_flag==0&&RIGHT_EDGE_type !=0)
+           {
+               lxflag++;
+               if(lxflag==3||lxflag==-1)
+               {
+                   lxflag=-1;
+                   if(R_edge[row_known_geti(40,R_edge,R_edge_count)].col-L_edge[row_known_geti(40,L_edge,L_edge_count)].col <50)
+                   {
+                       int count=0;
+                       int i;
+                       for(i=0;i<=59;i++)
+                       {
+                           if(ooutput[i][85]==1)//white
+                               count++;
+                       }
+                       if(count<3)
+                       cdstate=2;
+                       lxflag=0;
+                   }
+               }
+
+
+           }
+           else if(lxflag!=-1)
+               lxflag=0;
+
+               */
+       }
+       if(cdstate==12)
+       {
+           inelement=0;
+           cdstate=0;
+           number_cd++;
+           //if((Lc.corner_flag&&Lc.corner_row>15&&lb_la<75&&lb_count_l>=3)||(Rc.corner_flag&&Rc.corner_row>15)&&lb_ra<75&&lb_count_r>=3)//&&lb_count_l>=3
+           //    cdstate=3;
+       }
 
 
     ti=cdstate;
@@ -1951,8 +3479,16 @@ void process_cd(){
     if(cdstate==0)
     {
 
-        spot2spot(ooutput,58,66,0,60);
-        spot2spot(ooutput,58,21,0,21);
+        //spot2spot(ooutput,58,66,0,60);
+        //spot2spot(ooutput,58,21,0,21);7
+        if(Lc.corner_flag)
+            simple_bu(0);
+        else
+            simple_bu(2);
+        if(Rc.corner_flag)
+            simple_bu(1);
+        else
+            simple_bu(3);
         Image_process(ooutput);
     }
 
@@ -1961,14 +3497,34 @@ void process_cd(){
 
         if(Rc.corner_flag==1)
         {
-            spot2spot(ooutput,0,Rc.corner_col,Rc.corner_row,Rc.corner_col);
+            spot2spot(ooutput,0,Rc.corner_col-20,Rc.corner_row,Rc.corner_col);
         }
 
         else
         {
-                spot2spot(ooutput,58,66,0,60);
+                spot2spot(ooutput,58,66,0,40);
         }
         Image_process(ooutput);
+        left_findflag = 0;
+        LEFT_EDGE_type = 0;
+        L_edge_count = 0;
+    }
+    if(cdstate==11)
+    {
+
+        if(Lc.corner_flag==1)
+        {
+            spot2spot(ooutput,0,Lc.corner_col+20,Lc.corner_row,Lc.corner_col);
+        }
+
+        else
+        {
+                spot2spot(ooutput,58,2*zhongxian-66,0,2*zhongxian-40);
+        }
+        Image_process(ooutput);
+        right_findflag = 0;
+        RIGHT_EDGE_type = 0;
+        R_edge_count = 0;
     }
     if(cdstate==2)
     {
@@ -1976,52 +3532,504 @@ void process_cd(){
         RIGHT_EDGE_type = 0;
         R_edge_count = 0;
     }
+    if(cdstate==12)
+    {
+       left_findflag = 0;
+       LEFT_EDGE_type = 0;
+       L_edge_count = 0;
+    }
+    /*
     if(cdstate==3)
     {
 
-        spot2spot(ooutput,58,66,0,70);
-        spot2spot(ooutput,58,21,0,21);
+        //spot2spot(ooutput,58,66,0,70);
+        //spot2spot(ooutput,58,21,0,21);
+        if(Lc.corner_flag)
+            simple_bu(0);
+        else
+            simple_bu(2);
+        if(Rc.corner_flag)
+            simple_bu(1);
+        else
+            simple_bu(3);
         Image_process(ooutput);
     }
     if(cdstate==4)
     {
         if(Rc.corner_flag==1)
         {
-            spot2spot(ooutput,0,Rc.corner_col-10,Rc.corner_row,Rc.corner_col);
+            spot2spot(ooutput,0,Rc.corner_col-20,Rc.corner_row,Rc.corner_col);
         }
+
 
         else
         {
-                spot2spot(ooutput,58,66,0,60);
+                spot2spot(ooutput,58,66,0,40);
         }
+        Image_process(ooutput);
+        left_findflag = 0;
+        LEFT_EDGE_type = 0;
+        L_edge_count = 0;
+
+    }*/
+}
+
+void process_dzl()
+{
+    static int dzlstate;
+    static float dzl_Yaw;
+    static float det_Yaw;
+    if(dzlstate==0)
+    {
+        if(LEFT_EDGE_type==2)
+        {
+            dzlstate=2;
+        }
+        if(RIGHT_EDGE_type==2)
+        {
+            dzlstate=12;
+        }
+
+
+
+
+
+    }
+    if(dzlstate==2)
+    {
+       /* int i=20;
+        while(check_bmx(i)==0&&i<=49)
+        {
+            i++;
+        }
+        if(i!=50)
+        {
+            process_bmx(11);
+            inelement=5;
+            dzlstate=0;
+            return;
+        }
+        */
+        if(Lc.corner_flag&&Lc.corner_angle>40&&Lc.corner_angle<140&&Lc.corner_row>20)
+        {
+            //jjjs(10);
+            dzlstate=3;
+        }
+    }
+    if(dzlstate==3)
+    {
+        static int zxflag=0;
+        if(Rc.corner_flag&&Rc.corner_row>35||Lc.corner_flag&&Lc.corner_row>35)
+        {
+            jjjs(7);
+            //SPEED_SET=300;
+            zxflag=1;
+        }
+        if(zxflag==1)
+        {
+            int c1=0;
+            int temp_i=1;
+            int scan_row=40;
+            while(temp_i<40)
+            {
+                if(white_(ooutput[scan_row][47-temp_i])||white_(ooutput[scan_row][47-temp_i-1])||white_(ooutput[scan_row][47-temp_i-2]))
+                {
+                    temp_i++;
+                    c1++;
+                }
+                else
+                    break;
+
+            }
+            temp_i=1;
+            while(temp_i<40)
+            {
+                if(white_(ooutput[scan_row][47+temp_i])||white_(ooutput[scan_row][47+temp_i+1])||white_(ooutput[scan_row][47+temp_i+2]))
+                {
+                    temp_i++;
+                    c1++;
+                }
+                else
+                    break;
+
+            }
+
+
+
+            if(!Lc.corner_flag&&!Rc.corner_flag&&c1>40)//
+            {
+                //jjjs(5);
+                zxflag=0;
+                dzlstate=4;
+                dzl_Yaw=Yaw;
+            }
+        }
+
+    }
+    if(dzlstate==4)
+    {
+        /*if(LEFT_EDGE_type==-1&&RIGHT_EDGE_type==-1)
+        {
+            dzlstate=5;
+        }*/
+        static int lxflag;
+        int count=0;
+        int i;
+        for(i=15;i<=59;i++)
+        {
+            if(ooutput[i][70]==1)//white
+                count++;
+        }
+        det_Yaw=Yaw-dzl_Yaw;
+        if ( det_Yaw<-180)
+            det_Yaw=360+det_Yaw;
+        else if(det_Yaw>180)
+            det_Yaw=-360+det_Yaw;
+
+        if(det_Yaw>75||det_Yaw<-75)
+        {
+            lxflag=0;
+            dzlstate=5;
+            //SPEED_SET=pama_run.speed_set;
+        }
+
+        if(count<4&&R_edge_count>30&&R_edge[30].col-R_edge[1].col>-10&&white_(ooutput[40][47]))//RIGHT_EDGE_type !=0&&LEFT_EDGE_type !=0
+        {
+            lxflag++;
+            if(lxflag>=2&&(det_Yaw>60||det_Yaw<-60))//det60才允许退出
+            {
+
+                lxflag=0;
+                dzlstate=5;
+                //SPEED_SET=pama_run.speed_set;
+            }
+
+
+        }
+        else
+            lxflag=0;
+    }
+    if(dzlstate==12)//keft sz
+    {
+        /*int i=20;
+        while(check_bmx(i)==0&&i<=49)
+        {
+            i++;
+        }
+        if(i!=50)
+        {
+            process_bmx(1);
+            inelement=5;
+            dzlstate=0;
+            return;
+        }
+        */
+        if(Rc.corner_flag&&Rc.corner_angle>40&&Rc.corner_angle<140&&Rc.corner_row>20)
+        {
+            //jjjs(10);
+            dzlstate=13;
+        }
+    }
+    if(dzlstate==13)
+    {
+
+
+
+        static int zxflag=0;
+        if(Rc.corner_flag&&Rc.corner_row>35||Lc.corner_flag&&Lc.corner_row>35)
+        {
+            jjjs(7);
+            //SPEED_SET=300;
+            zxflag=1;
+        }
+        if(zxflag==1)
+        {
+            int c1=0;
+            int temp_i=1;
+            int scan_row=40;
+            while(temp_i<40)
+            {
+                if(white_(ooutput[scan_row][47-temp_i])||white_(ooutput[scan_row][47-temp_i-1])||white_(ooutput[scan_row][47-temp_i-2]))
+                {
+                    temp_i++;
+                    c1++;
+                }
+                else
+                    break;
+
+            }
+            temp_i=1;
+            while(temp_i<40)
+            {
+                if(white_(ooutput[scan_row][47+temp_i])||white_(ooutput[scan_row][47+temp_i+1])||white_(ooutput[scan_row][47+temp_i+2]))
+                {
+                    temp_i++;
+                    c1++;
+                }
+                else
+                    break;
+
+            }
+
+
+
+            if(!Lc.corner_flag&&!Rc.corner_flag&&c1>40)//
+            {
+                //jjjs(5);
+                zxflag=0;
+                dzl_Yaw=Yaw;
+                dzlstate=14;
+            }
+        }
+    }
+    if(dzlstate==14)
+    {
+        /*if(LEFT_EDGE_type==-1&&RIGHT_EDGE_type==-1)
+        {
+            if(R_edge[row_known_geti(40,R_edge,R_edge_count)].col-L_edge[row_known_geti(40,L_edge,L_edge_count)].col <40)
+                dzlstate=15;
+        }*/
+        static int lxflag;
+        int count=0;
+        int i;
+        for(i=15;i<=59;i++)
+        {
+            if(ooutput[i][18]==1)//white
+                count++;
+        }
+        det_Yaw=Yaw-dzl_Yaw;
+        if ( det_Yaw<-180)
+            det_Yaw=360+det_Yaw;
+        else if(det_Yaw>180)
+            det_Yaw=-360+det_Yaw;
+       if(det_Yaw>75||det_Yaw<-75)
+            {
+                lxflag=0;
+                dzlstate=15;
+                //SPEED_SET=pama_run.speed_set;
+            }
+
+        if(count<4&&L_edge_count>30&&L_edge[30].col-L_edge[1].col<10&&white_(ooutput[40][47]))
+        {
+            lxflag++;
+            if(lxflag>=2&&(det_Yaw>60||det_Yaw<-60))
+            {
+
+                lxflag=0;
+                dzlstate=15;
+                //SPEED_SET=pama_run.speed_set;
+            }
+
+
+        }
+        else
+            lxflag=0;
+    }
+    ti=dzlstate;
+
+    if(dzlstate==2)
+    {
+        right_findflag = 0;
+        RIGHT_EDGE_type = 0;
+        R_edge_count = 0;
+    }
+    if(dzlstate==3)
+    {
+        //spot2spot(ooutput,R_edge[0].row,R_edge[0].col,5,R_edge[0].col);
+        if(Lc.corner_flag)
+            simple_bu(0);
+        else
+            simple_bu(2);
+        if(Rc.corner_flag)
+            simple_bu(1);
+        else
+            simple_bu(3);
         Image_process(ooutput);
 
     }
+    if(dzlstate==4)
+    {
+        spot2spot(ooutput,R_edge[0].row,R_edge[0].col,5,10);
+        Image_process(ooutput);
+        left_findflag = 0;
+        LEFT_EDGE_type = 0;
+        L_edge_count = 0;
+
+        //smotor_pd=ck_left;
+        //flag_pd=1;
+
+
+    }
+    if(dzlstate==5)
+    {
+        dzlstate=0;
+        inelement=0;/*
+        int temp=afterys();
+        if(temp!=0)
+        {
+            if(temp==1)
+            {
+                inelement=2;
+                process_yh(21);
+            }
+        }*/
+    }
+
+    if(dzlstate==12)//keft sz
+    {
+        left_findflag = 0;
+        LEFT_EDGE_type = 0;
+        L_edge_count = 0;
+    }
+    if(dzlstate==13)
+    {
+        //spot2spot(ooutput,L_edge[0].row,L_edge[0].col,5,L_edge[0].col);
+        if(Lc.corner_flag)
+            simple_bu(0);
+        else
+            simple_bu(2);
+        if(Rc.corner_flag)
+            simple_bu(1);
+        else
+            simple_bu(3);
+        Image_process(ooutput);
+
+    }
+    if(dzlstate==14)
+    {
+        spot2spot(ooutput,L_edge[0].row,L_edge[0].col,5,IMGW-10);
+        Image_process(ooutput);
+        right_findflag = 0;
+        RIGHT_EDGE_type = 0;
+        R_edge_count = 0;
+
+
+        //smotor_pd=ck_right;
+        //flag_pd=1;
+
+    }
+    if(dzlstate==15)
+    {
+        dzlstate=0;
+        inelement=0;
+    }
+
+
+
 }
 
 
-
-
-void process_yh()
+void process_yh(int pre_state)
 {
     static int yhstate;
+    static float yh_Yaw;
+    static float det_Yaw;
+    if(pre_state!=0)
+        yhstate=pre_state;
     //zhuangtaiqiehuan
+
     if(yhstate==0)//发现拐点
     {
-        if(RIGHT_EDGE_type==0 )
+        if(Lc.corner_flag)
+            yhstate=11;
+        else if(Rc.corner_flag)
             yhstate=1;
+
     }
     if(yhstate==1)//
     {
+        int i=10;
+        while(check_bmx(i)==0&&i<=59)
+        {
+            i++;
+        }
+        if(i!=60)
+        {
+            inelement=5;
+            yhstate=0;
+
+            process_bmx(11);
+
+            return;
+        }//bmx
+
+
+
+
         //if(RIGHT_EDGE_type==-1 )
+        static int cross_flag=0;
+        int c1=0;
+        int temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47-temp_i])||white_(ooutput[40][47-temp_i-1])||white_(ooutput[40][47-temp_i-2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47+temp_i])||white_(ooutput[40][47+temp_i+1])||white_(ooutput[40][47+temp_i]+2))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        if(cross_flag==0&&c1>40)
+            cross_flag=1;
+        if(cross_flag==1&&c1<40)
+        {
+            cross_flag=0;
+            //jjjs(18);
             yhstate=2;
+        }
+
+        //if(RIGHT_EDGE_type==0 )
+        //    yhstate=2;
+
     }
     if(yhstate==2)//进入圆环
     {
-        if(uRc.corner_flag==1&&RIGHT_EDGE_type==0&&uRc.corner_angle>90 )
+
+        int i=10;
+        while(check_bmx(i)==0&&i<=59)
+        {
+            i++;
+        }
+        if(i!=60)
+        {
+            inelement=5;
+            yhstate=0;
+
+            process_bmx(11);
+
+            return;
+        }
+
+        if(LEFT_EDGE_type==2)
+        {
+            RIGHT_EDGE_type=0;
+            process_dzl();
+            inelement=4;
+            yhstate=0;
+            return;
+        }
+        if(uRc.corner_flag==1&&uRc.corner_angle>70&&uRc.corner_angle<120 &&uRc.corner_row<30)
             yhstate=3;
-        if(LEFT_EDGE_type==-1&&RIGHT_EDGE_type==0&&check_yhj()!=-1 )
+        if(LEFT_EDGE_type==-1&&RIGHT_EDGE_type==0&&check_yhj()!=-1 )//&&black_(Bin_Image[55][92])&&black_(Bin_Image[56][92])
             yhstate=3;
+        if(yhstate==3)
+            //jjjs(15);
+            yh_Yaw=Yaw ;
+
     }
     if(yhstate==3)//贴线走
     {
@@ -2031,7 +4039,7 @@ void process_yh()
     }
     if(yhstate==4)//准备出圆环
     {
-        if(Lc.corner_flag&&L_edge[Lc.corner_icount].row>30&&Lc.corner_angle>90&&L_edge[L_edge_count].col<30)
+        if(Lc.corner_flag&&Lc.corner_row>20)//5&&Lc.corner_angle>90&&L_edge[L_edge_count].col<30
             yhstate=5;
     }
     if(yhstate==5)//双白
@@ -2041,31 +4049,419 @@ void process_yh()
     }
     if(yhstate==6)//双白
     {
-        if(LEFT_EDGE_type==-1)
+        det_Yaw=Yaw-yh_Yaw;
+        if ( det_Yaw<-180)
+            det_Yaw=360+det_Yaw;
+        else if(det_Yaw>180)
+            det_Yaw=-360+det_Yaw;
+        if(det_Yaw<20&&det_Yaw>-20)
             yhstate=7;
+        if(LEFT_EDGE_type==-1)
+        {
+
+            /*static int lxflag;
+            int count=0;
+            int i;
+            for(i=0;i<=59;i++)
+            {
+                if(ooutput[i][15]==1)//white
+                    count++;
+            }
+
+            if(count<3)
+            {
+                lxflag++;
+                if(lxflag==2)
+                {
+
+                    lxflag=0;
+                    yhstate=7;
+                }
+
+
+            }
+            else
+                lxflag=0;*/
+
+            if(L_edge_count>40&&L_edge[40].col-L_edge[10].col>-10&&det_Yaw<45&&det_Yaw>-45)
+            {
+                yhstate=7;
+            }
+        }
+
     }
     if(yhstate==7)
     {
+        /*int c1=0;
+        int temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47-temp_i])||white_(ooutput[40][47-temp_i-1])||white_(ooutput[40][47-temp_i-2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47+temp_i])||white_(ooutput[40][47+temp_i+1])||white_(ooutput[40][47+temp_i]+2))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        if(c1>40)
+            yhstate=8;*/
+
+
+
         //if(uRc.corner_flag==1&&(RIGHT_EDGE_type==0||RIGHT_EDGE_type==-1)&&LEFT_EDGE_type==-1)
         if(uRc.corner_flag==1&&LEFT_EDGE_type==-1)
             yhstate=8;
     }
     if(yhstate==8)
     {
-        if(uRc.corner_flag==0&&RIGHT_EDGE_type==-1)
+        /*
+        static int cross_flag=0;
+        int c1=0;
+        int temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47-temp_i])||white_(ooutput[40][47-temp_i-1])||white_(ooutput[40][47-temp_i-2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47+temp_i])||white_(ooutput[40][47+temp_i+1])||white_(ooutput[40][47+temp_i]+2))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        if(c1>40)
+        {
+            cross_flag=1;
+        }
+        if(c1<40&&cross_flag)
+        {
+            yhstate=0;
+            inelement=0;
+            cross_flag=0;
+        }
+
+
+        if(uRc.corner_flag==0&&Rc.corner_flag==0&&lb_count_r==0)
         {
             yhstate=0;
             inelement=0;
         }
+        */
+        int i;
+        for(i=50;i<53;i++)
+        {
+            if(Bin_Image[i][91]==1)
+                break;
+
+        }
+        if(i==53)
+        {
+            yhstate=0;
+            inelement=0;
+        }
+    }
+
+    if(yhstate==11)//
+    {
+        int i=10;
+        while(check_bmx(i)==0&&i<=59)
+        {
+            i++;
+        }
+        if(i!=60)
+        {
+            inelement=5;
+            yhstate=0;
+
+            process_bmx(1);
+
+            return;
+        }
+
+
+
+        //if(RIGHT_EDGE_type==-1 )
+        //if(LEFT_EDGE_type==0 )
+        //    yhstate=12;
+        static int cross_flag2=0;
+        int c1=0;
+        int temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47-temp_i])||white_(ooutput[40][47-temp_i-1])||white_(ooutput[40][47-temp_i-2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47+temp_i])||white_(ooutput[40][47+temp_i+1])||white_(ooutput[40][47+temp_i+2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        if(cross_flag2==0&&c1>40)
+            cross_flag2=1;
+        if(cross_flag2==1&&c1<40)
+        {
+            cross_flag2=0;
+            //jjjs(18);
+            yhstate=12;
+        }
 
     }
+    if(yhstate==12)//进入圆环
+    {
+
+        int i=10;
+        while(check_bmx(i)==0&&i<=59)
+        {
+            i++;
+        }
+        if(i!=60)
+        {
+
+            inelement=5;
+            yhstate=0;
+            process_bmx(1);
+
+            return;
+        }
+        if(RIGHT_EDGE_type==2)
+        {
+            LEFT_EDGE_type=0;
+            process_dzl();
+            inelement=4;
+            yhstate=0;
+            return;
+        }
+        if(uLc.corner_flag==1&&uLc.corner_angle>70&&uLc.corner_angle<120 &&uLc.corner_row<30)
+            yhstate=13;
+        if(RIGHT_EDGE_type==-1&&LEFT_EDGE_type==0&&check_yhj_db()!=-1 )//gai//&&black_(Bin_Image[55][1])&&black_(Bin_Image[56][1])
+            yhstate=13;
+        if(yhstate==13)
+            //jjjs(15);
+            yh_Yaw=Yaw;
+
+    }
+    if(yhstate==13)//贴线走
+    {
+        if(RIGHT_EDGE_type==2)
+           yhstate=14;
+        //if(Lc.corner_row)
+    }
+    if(yhstate==14)//准备出圆环
+    {
+        if(Rc.corner_flag&&Rc.corner_row>20)//&&Rc.corner_angle>90&&R_edge[R_edge_count].col>93-30
+            yhstate=15;
+    }
+    if(yhstate==15)//双白
+    {
+        if(LEFT_EDGE_type==0&&RIGHT_EDGE_type==0)
+            yhstate=16;
+    }
+    if(yhstate==16)//双白
+    {
+        /*if(RIGHT_EDGE_type==-1)
+        {
+            static int lxflag;
+            int count=0;
+            int i;
+            for(i=0;i<=59;i++)
+            {
+                if(ooutput[i][80]==1)//white
+                    count++;
+            }
+
+            if(count<3)
+            {
+                lxflag++;
+                if(lxflag==2)
+                {
+
+                    lxflag=0;
+                    yhstate=17;
+                }
+
+
+            }
+            else
+                lxflag=0;
+        }*/
+        det_Yaw=Yaw-yh_Yaw;
+        if ( det_Yaw<-180)
+            det_Yaw=360+det_Yaw;
+        else if(det_Yaw>180)
+            det_Yaw=-360+det_Yaw;
+        if(det_Yaw<20&&det_Yaw>-20)
+            yhstate=17;
+        if(RIGHT_EDGE_type==-1&&R_edge_count>40&&R_edge[40].col-R_edge[10].col<10&&det_Yaw<45&&det_Yaw>-45)
+        {
+            yhstate=17;
+        }
+
+    }
+    if(yhstate==17)
+    {
+        /*int c1=0;
+        int temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47-temp_i])||white_(ooutput[40][47-temp_i-1])||white_(ooutput[40][47-temp_i-2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47+temp_i])||white_(ooutput[40][47+temp_i+1])||white_(ooutput[40][47+temp_i]+2))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        if(c1>40)
+        {
+            yhstate=8;
+            //inelement=0;
+        }*/
+
+
+        //if(uRc.corner_flag==1&&(RIGHT_EDGE_type==0||RIGHT_EDGE_type==-1)&&LEFT_EDGE_type==-1)
+        if(uLc.corner_flag==1&&RIGHT_EDGE_type==-1)
+            yhstate=18;
+    }
+    if(yhstate==18)
+    {
+        /*int c1=0;
+        int temp_i=1;
+        static int cross_flag=0;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47-temp_i])||white_(ooutput[40][47-temp_i-1])||white_(ooutput[40][47-temp_i-2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(ooutput[40][47+temp_i])||white_(ooutput[40][47+temp_i+1])||white_(ooutput[40][47+temp_i]+2))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        if(c1>40)
+            cross_flag=1;
+        if(c1<40&&cross_flag)
+        {
+            yhstate=0;
+            inelement=0;
+            cross_flag=0;
+        }
+
+
+        if(uLc.corner_flag==0&&Lc.corner_flag==0&&lb_count_l==0)
+        {
+            yhstate=0;
+            inelement=0;
+        }
+*/
+        int i;
+        for(i=50;i<53;i++)
+        {
+            if(Bin_Image[i][3]==1)
+                break;
+
+        }
+        if(i==53)
+        {
+            yhstate=0;
+            inelement=0;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ti=yhstate;
 
 
 
     //zhuangtaichuli
-    if(yhstate==0||yhstate==1||yhstate==2)
+
+    if(yhstate==0)
+    {
+        if(Lc.corner_flag)
+            simple_bu(0);
+        if(Rc.corner_flag)
+            simple_bu(1);
+    }
+    if(yhstate==1||yhstate==2)
     {
 
         //ECPULSE_SET=300;
@@ -2078,13 +4474,13 @@ void process_yh()
     {
 
         //int tr=0,tc=0;
-        pama.kp = 45;
+        //pama.kp = 45;
         if(uRc.corner_flag==1)
         {
             //spot2spot(ooutput,58,20,uRc.corner_row-5,uRc.corner_col+5);
             //tr=uRc.corner_row;
             //tc=uRc.corner_col;
-            spot2spot(ooutput,58,20,20,IMGW-5);
+            spot2spot(ooutput,50,10,20,IMGW-10);
         }
 
         else
@@ -2093,7 +4489,7 @@ void process_yh()
             //if(sw!=-1)
             //    spot2spot(ooutput,58,20,0,sw);
             //else
-                spot2spot(ooutput,58,20,20,IMGW/2);
+                spot2spot(ooutput,50,10,20,IMGW-10);
 
         }
 
@@ -2104,15 +4500,15 @@ void process_yh()
     }
     if(yhstate==4)
     {
-        pama.kp = 40;
+        //pama.kp = 40;
         right_findflag = 0;
         RIGHT_EDGE_type = 0;
         R_edge_count = 0;
     }
     if(yhstate==5)
     {
-        pama.kp = 45;
-        spot2spot(ooutput,L_edge[0].row,L_edge[0].col,5,IMGW-20);
+        //pama.kp = 45;
+        spot2spot(ooutput,L_edge[0].row,L_edge[0].col,5,IMGW-35);
 
         Image_process(ooutput);
         right_findflag = 0;
@@ -2121,7 +4517,7 @@ void process_yh()
     }
     if(yhstate==6)
     {
-        spot2spot(ooutput,L_edge[0].row,L_edge[0].col,5,IMGW-20);
+        spot2spot(ooutput,L_edge[0].row,L_edge[0].col,5,IMGW-35);
 
         Image_process(ooutput);
         right_findflag = 0;
@@ -2141,8 +4537,88 @@ void process_yh()
         right_findflag = 0;
         RIGHT_EDGE_type = 0;
         R_edge_count = 0;
-        pama.kp = 35;
+        //pama.kp = 35;
     }
+
+    if(yhstate==11||yhstate==12||yhstate==21)
+    {
+
+        //ECPULSE_SET=300;
+        left_findflag = 0;
+        LEFT_EDGE_type = 0;
+
+        L_edge_count = 0;
+    }
+    if(yhstate==13)
+    {
+
+        //int tr=0,tc=0;
+        //pama.kp = 45;
+        if(uLc.corner_flag==1)
+        {
+            //spot2spot(ooutput,58,20,uRc.corner_row-5,uRc.corner_col+5);
+            //tr=uRc.corner_row;
+            //tc=uRc.corner_col;
+            spot2spot(ooutput,50,93-12,20,8);
+        }
+
+        else
+        {
+            //int sw=check_yhj();
+            //if(sw!=-1)
+            //    spot2spot(ooutput,58,20,0,sw);
+            //else
+                spot2spot(ooutput,50,93-12,20,8);
+
+        }
+
+        Image_process(ooutput);
+        left_findflag = 0;
+        LEFT_EDGE_type = 0;
+        L_edge_count = 0;
+    }
+    if(yhstate==14)
+    {
+        //pama.kp = 40;
+        left_findflag = 0;
+        LEFT_EDGE_type = 0;
+        L_edge_count = 0;
+    }
+    if(yhstate==15)
+    {
+        //pama.kp = 45;
+        spot2spot(ooutput,R_edge[0].row,R_edge[0].col,5,35-6);
+
+        Image_process(ooutput);
+        left_findflag = 0;
+        LEFT_EDGE_type = 0;
+        L_edge_count = 0;
+    }
+    if(yhstate==16)
+    {
+        spot2spot(ooutput,R_edge[0].row,R_edge[0].col,5,35-6);
+
+        Image_process(ooutput);
+        left_findflag = 0;
+        LEFT_EDGE_type = 0;
+        L_edge_count = 0;
+    }
+    if(yhstate==17)
+    {
+
+        left_findflag = 0;
+        LEFT_EDGE_type = 0;
+        L_edge_count = 0;
+    }
+    if(yhstate==18)
+    {
+        //ECPULSE_SET=450;
+        left_findflag = 0;
+        LEFT_EDGE_type = 0;
+        L_edge_count = 0;
+        //pama.kp = 35;
+    }
+
 }
 
 
@@ -2251,13 +4727,58 @@ int szorcd_check(){
 float akm(int duty){
     float x=15.5;
     float L=20;
-    float k=3.8;
-    float V= tan((duty-625)/10*k*3.14/180)*x/(L*2);
-    return 0.65*V;
+    float k=3.5;
+    float V;
+    if(duty-Servo_Center_Mid>0)
+        V= tan((duty-Servo_Center_Mid)/10*k*3.14/180)*x/(L*2)/(1-(x*tan((duty-Servo_Center_Mid)/10*k*3.14/180)/(2*L)));
+    else
+        V= tan((duty-Servo_Center_Mid)/10*k*3.14/180)*x/(L*2)/(1+(x*tan((duty-Servo_Center_Mid)/10*k*3.14/180)/(2*L)));
+    if (duty-Servo_Center_Mid<25&&duty-Servo_Center_Mid>-25)
+        V=0;
+    return 1.0*pama_run.chasu_set/10*V;
 }
 
 int check_yhj()
 {
+
+    int c1=0;
+    int temp_i=1;
+    while(temp_i<40)
+    {
+        if(white_(ooutput[30][47-temp_i])||white_(ooutput[30][47-temp_i-1])||white_(ooutput[30][47-temp_i-2]))
+        {
+            temp_i++;
+            c1++;
+        }
+        else
+            break;
+
+    }
+    temp_i=1;
+    while(temp_i<40)
+    {
+        if(white_(ooutput[30][47+temp_i])||white_(ooutput[30][47+temp_i+1])||white_(ooutput[30][47+temp_i+2]))
+        {
+            temp_i++;
+            c1++;
+        }
+        else
+            break;
+
+    }
+    if(c1>50)
+        return 1;
+
+
+
+
+
+
+
+
+
+
+
     int fw,fb,sw,sb;
     fw=-1;
     fb=-1;
@@ -2266,6 +4787,55 @@ int check_yhj()
     int i=0;
     int r;
     r=0;
+    for(r=0;r<=20;r++)
+    {
+        fw=-1;
+        fb=-1;
+        sw=-1;
+        sb=-1;
+        i=0;
+        while(i<IMGW)
+        {
+            if(ooutput[r][i]==1)
+            {
+                fw=i;
+                break;
+            }
+            i++;
+        }
+        while(i<IMGW)
+        {
+            if(ooutput[r][i]==0)
+            {
+                fb=i;
+                break;
+            }
+            i++;
+        }
+        while(i<IMGW)
+        {
+            if(ooutput[r][i]==1)
+            {
+                sw=i;
+                break;
+            }
+            i++;
+        }
+        while(i<IMGW)
+        {
+            if(ooutput[r][i]==0)
+            {
+                sb=i;
+                break;
+            }
+            i++;
+        }
+        if(fw>20&&(sw-fb)<15&&(sw-fb)>2)
+        {
+            return sw;
+        }
+    }
+    return -1;/*
     while(i<IMGW)
     {
         if(ooutput[r][i]==1)
@@ -2442,6 +5012,955 @@ int check_yhj()
                     return -1;
             }
         }
-    }
+    }*/
         //return -1;
 }
+
+
+int check_yhj_db()
+{
+
+    int c1=0;
+    int temp_i=1;
+    while(temp_i<40)
+    {
+        if(white_(ooutput[30][47-temp_i])||white_(ooutput[30][47-temp_i-1])||white_(ooutput[30][47-temp_i-2]))
+        {
+            temp_i++;
+            c1++;
+        }
+        else
+            break;
+
+    }
+    temp_i=1;
+    while(temp_i<40)
+    {
+        if(white_(ooutput[30][47+temp_i])||white_(ooutput[30][47+temp_i+1])||white_(ooutput[30][47+temp_i+2]))
+        {
+            temp_i++;
+            c1++;
+        }
+        else
+            break;
+
+    }
+    if(c1>50)
+        return 1;
+
+
+
+
+
+
+    int fw,fb,sw,sb;
+    fw=-1;
+    fb=-1;
+    sw=-1;
+    sb=-1;
+    int i=0;
+    int r;
+    r=0;
+    for(r=0;r<=20;r++)
+    {
+        fw=-1;
+        fb=-1;
+        sw=-1;
+        sb=-1;
+        i=0;
+        while(i<IMGW)
+        {
+            if(ooutput[r][93-i]==1)
+            {
+                fw=i;
+                break;
+            }
+            i++;
+        }
+        while(i<IMGW)
+        {
+            if(ooutput[r][93-i]==0)
+            {
+                fb=i;
+                break;
+            }
+            i++;
+        }
+        while(i<IMGW)
+        {
+            if(ooutput[r][93-i]==1)
+            {
+                sw=i;
+                break;
+            }
+            i++;
+        }
+        while(i<IMGW)
+        {
+            if(ooutput[r][93-i]==0)
+            {
+                sb=i;
+                break;
+            }
+            i++;
+        }
+        if(fw>20&&(sw-fb)<15&&(sw-fb)>2)
+        {
+            return sw;
+        }
+
+    }
+    return -1;
+/*
+    else
+    {
+        r=6;
+        i=0;
+        while(i<IMGW)
+        {
+            if(ooutput[r][93-i]==1)
+            {
+                fw=i;
+                break;
+            }
+            i++;
+        }
+        while(i<IMGW)
+        {
+            if(ooutput[r][93-i]==0)
+            {
+                fb=i;
+                break;
+            }
+            i++;
+        }
+        while(i<IMGW)
+        {
+            if(ooutput[r][93-i]==1)
+            {
+                sw=i;
+                break;
+            }
+            i++;
+        }
+        while(i<IMGW)
+        {
+            if(ooutput[r][93-i]==0)
+            {
+                sb=i;
+                break;
+            }
+            i++;
+        }
+        if(fw>22&&sb!=-1&&(sw-fb)>2)
+        {
+            return sw;
+        }
+        else
+        {
+            r=3;
+            i=0;
+            while(i<IMGW)
+            {
+                if(ooutput[r][93-i]==1)
+                {
+                    fw=i;
+                    break;
+                }
+                i++;
+            }
+            while(i<IMGW)
+            {
+                if(ooutput[r][93-i]==0)
+                {
+                    fb=i;
+                    break;
+                }
+                i++;
+            }
+            while(i<IMGW)
+            {
+                if(ooutput[r][93-i]==1)
+                {
+                    sw=i;
+                    break;
+                }
+                i++;
+            }
+            while(i<IMGW)
+            {
+                if(ooutput[r][93-i]==0)
+                {
+                    sb=i;
+                    break;
+                }
+                i++;
+            }
+            if(fw>22&&sb!=-1&&(sw-fb)>2)
+            {
+                return sw;
+            }
+            else
+            {
+                r=9;
+                i=0;
+                while(i<IMGW)
+                {
+                    if(ooutput[r][93-i]==1)
+                    {
+                        fw=i;
+                        break;
+                    }
+                    i++;
+                }
+                while(i<IMGW)
+                {
+                    if(ooutput[r][93-i]==0)
+                    {
+                        fb=i;
+                        break;
+                    }
+                    i++;
+                }
+                while(i<IMGW)
+                {
+                    if(ooutput[r][93-i]==1)
+                    {
+                        sw=i;
+                        break;
+                    }
+                    i++;
+                }
+                while(i<IMGW)
+                {
+                    if(ooutput[r][93-i]==0)
+                    {
+                        sb=i;
+                        break;
+                    }
+                    i++;
+                }
+                if(fw>22&&sb!=-1&&(sw-fb)>2)
+                {
+                    return sw;
+                }
+                else
+                    return -1;
+            }
+        }
+    }*/
+        //return -1;
+}
+
+void pid_init()
+{
+    pama.kp = 180;      // P记得幅值
+    pama.ki = 0;       // I
+    pama.kd = 200;      // D
+    pama.i_max = 1000; // integrator_max
+    pama.p_max = 1000; // integrator_max
+    pama.d_max = 1000; // integrator_max
+    pama.pre_error = 0;
+    pama.pre_pre_error = 0;
+}
+
+void corner_angle_lb()
+{
+
+    if(Lc.corner_flag==1)
+        lb_count_l++;
+    else
+        lb_count_l--;
+    if(lb_count_l>10)
+        lb_count_l=10;
+    if(lb_count_l<0)
+        lb_count_l=0;
+    if(Lc.corner_flag==1)
+        lb_la=(lb_la*(lb_count_l-1)+Lc.corner_angle)/(lb_count_l);
+
+    if(Rc.corner_flag==1)
+        lb_count_r++;
+    else
+        lb_count_r--;
+    if(lb_count_r>10)
+        lb_count_r=10;
+    if(lb_count_r<0)
+        lb_count_r=0;
+    if(Rc.corner_flag==1)
+        lb_ra=(lb_ra*(lb_count_r-1)+Rc.corner_angle)/(lb_count_r);
+
+
+
+}
+
+
+void simple_bu(int flag){
+    int t;
+    if(Lc.corner_flag&&flag==0)
+    {
+        t=Lc.corner_icount;
+        if(t-10>0)
+        {
+           if(L_edge[t].row-L_edge[0].row==0)
+               return;
+           float k= 1.0*(L_edge[t].col-L_edge[0].col)/(L_edge[t].row-L_edge[0].row);
+           int y=(int)((0-L_edge[t].row)*k+L_edge[t].col);
+           if (y>=94)
+               y=93;
+           if (y<0)
+               y=0;
+           spot2spot(ooutput,0,y,L_edge[t].row,L_edge[t].col);
+        }
+        else
+        {
+           spot2spot(ooutput,0,L_edge[t].col,L_edge[t].row,L_edge[t].col+1);
+           spot2spot(ooutput,L_edge[0].row,L_edge[0].col,L_edge[t].row,L_edge[t].col);
+        }
+    }
+
+    if(Rc.corner_flag&&flag==1)
+    {
+        t=Rc.corner_icount;
+        if(t-10>0)
+        {
+           if(R_edge[t].row-R_edge[0].row==0)
+               return;
+           float k= 1.0*(R_edge[t].col-R_edge[0].col)/(R_edge[t].row-R_edge[0].row);
+           int y=(int)((0-R_edge[t].row)*k+R_edge[t].col);
+           if (y>=94)
+               y=93;
+           if (y<0)
+               y=0;
+           spot2spot(ooutput,0,y,R_edge[t].row,R_edge[t].col);
+        }
+        else
+        {
+           spot2spot(ooutput,0,R_edge[t].col,R_edge[t].row,R_edge[t].col);
+           spot2spot(ooutput,R_edge[0].row,R_edge[0].col,R_edge[t].row,R_edge[t].col);
+        }
+    }
+    if(flag==2)
+    {
+        t=15;
+        if(t-10>0)
+        {
+           if(L_edge[t].row-L_edge[0].row==0)
+               return;
+           float k= 1.0*(L_edge[t].col-L_edge[0].col)/(L_edge[t].row-L_edge[0].row);
+           int y=(int)((0-L_edge[t].row)*k+L_edge[t].col);
+           if (y>=94)
+               y=93;
+           if (y<0)
+               y=0;
+           spot2spot(ooutput,0,y,L_edge[t].row,L_edge[t].col);
+        }
+        else
+        {
+           spot2spot(ooutput,0,L_edge[t].col,L_edge[t].row,L_edge[t].col);
+        }
+    }
+    if(flag==3)
+    {
+        t=15;
+        if(t-10>0)
+        {
+           if(R_edge[t].row-R_edge[0].row==0)
+               return;
+           float k= 1.0*(R_edge[t].col-R_edge[0].col)/(R_edge[t].row-R_edge[0].row);
+           int y=(int)((0-R_edge[t].row)*k+R_edge[t].col);
+           if (y>=94)
+               y=93;
+           if (y<0)
+               y=0;
+           spot2spot(ooutput,0,y,R_edge[t].row,R_edge[t].col);
+        }
+        else
+        {
+           spot2spot(ooutput,0,R_edge[t].col,R_edge[t].row,R_edge[t].col);
+        }
+    }
+}
+
+
+int check_sz2yh()
+{
+
+    if(Lc.corner_flag==0&&uLc.corner_flag==0&&xieru_flag==2&&LEFT_EDGE_type==-1)
+    {
+
+        int count=0;
+        int i;
+        for(i=20;i<=59;i++)
+        {
+            if(ooutput[i][8]==1)//white
+                count++;
+        }
+
+        if(count>=3)
+        {
+
+            return 0;
+        }
+
+
+        i=8;
+        struct EDGE *line = L_edge;
+        int delt=7;
+        int temp;
+        if(L_edge_count<20)
+            return 0;
+        while(i+2*delt<L_edge_count - 10)
+        {
+            temp = Get_angle(line[i].row, line[i].col, line[i + delt].row, line[i + delt].col, line[i + delt * 2].row, line[i + delt * 2].col); //求角度
+            if(temp>35)
+                return 0;
+            i+=5;
+        }
+        return 1;
+    }
+
+
+
+    if(Rc.corner_flag==0&&uRc.corner_flag==0&&xieru_flag==1&&RIGHT_EDGE_type==-1)
+    {
+        int count=0;
+        int i;
+        for(i=20;i<=59;i++)
+        {
+            if(ooutput[i][85]==1)//white
+                count++;
+        }
+
+        if(count>=3)
+        {
+
+            return 0;
+        }
+
+        i=8;
+        struct EDGE *line = R_edge;
+        int delt=7;
+        int temp;
+        if(R_edge_count<20)
+            return 0;
+        while(i+2*delt<R_edge_count)
+        {
+            temp = Get_angle(line[i].row, line[i].col, line[i + delt].row, line[i + delt].col, line[i + delt * 2].row, line[i + delt * 2].col); //求角度
+            if(temp>35)
+                return 0;
+            i+=5;
+        }
+        return 1;
+    }
+    return 0;
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+int check_bmx(int row_bmx){
+    int count_bmx=0;
+    //int row_bmx=30;
+    int i;
+    int last_i=0;
+    int max=0;
+    int left=L_edge[row_known_geti(row_bmx,L_edge,L_edge_count)].col;
+    int right=R_edge[row_known_geti(row_bmx,R_edge,R_edge_count)].col;
+    if(right-left<25||right-left>50)
+    {
+      left=47-20;
+      right=47+20;
+    }
+    for (i=left+2;i<right;i++)
+    {
+        if(ooutput[row_bmx][i]!=ooutput[row_bmx][i-1]||ooutput[row_bmx-1][i]!=ooutput[row_bmx-1][i-1]||ooutput[row_bmx-2][i]!=ooutput[row_bmx-2][i-1]&&count_bmx==0)
+            {
+            count_bmx++;
+            last_i=i;
+            }
+        else if(ooutput[row_bmx][i]!=ooutput[row_bmx][i-1]||ooutput[row_bmx-1][i]!=ooutput[row_bmx-1][i-1]||ooutput[row_bmx-2][i]!=ooutput[row_bmx-2][i-1]&&i-last_i<=6&&count_bmx!=0)
+            {
+            count_bmx++;
+            last_i=i;
+            }
+        else if(ooutput[row_bmx][i]!=ooutput[row_bmx][i-1]||ooutput[row_bmx-1][i]!=ooutput[row_bmx-1][i-1]||ooutput[row_bmx-2][i]!=ooutput[row_bmx-2][i-1]&&i-last_i>6&&count_bmx!=0)
+            {
+            last_i=i;
+            max=max>count_bmx?max:count_bmx;
+            count_bmx=0;
+            }
+    }
+    max=max>count_bmx?max:count_bmx;
+    if(max>=14&&32>=max)
+    {
+        return 1;
+    }
+    return 0;
+}
+void Calecmembership(float *ms,float qValue,int *index)
+{
+    int NB=3;int PB=3;
+    int NM=2;int PM=2;
+    int NS=1;int PS=1;
+    int ZO=0;
+    if((qValue>=-NB)&&(qValue<-NM))
+  {
+    index[0]=0;
+    index[1]=1;
+    ms[1]=qValue+NB;
+    ms[0]=1-ms[1];
+  }
+  else if((qValue>=-NM)&&(qValue<-NS))
+  {
+    index[0]=1;
+    index[1]=2;
+    ms[1]=qValue+NM;
+    ms[0]=1-ms[1];
+  }
+  else if((qValue>=-NS)&&(qValue<ZO))
+  {
+    index[0]=2;
+    index[1]=3;
+    ms[1]=qValue+NS;
+    ms[0]=1-ms[1];
+  }
+  else if((qValue>=ZO)&&(qValue<PS))
+  {
+    index[0]=3;
+    index[1]=4;
+    ms[1]=qValue-ZO;
+    ms[0]=1-ms[1];
+  }
+  else if((qValue>=PS)&&(qValue<PM))
+  {
+    index[0]=4;
+    index[1]=5;
+    ms[1]=qValue-PS;
+    ms[0]=1-ms[1];
+  }
+  else if((qValue>=PM)&&(qValue<=PB))
+  {
+    index[0]=5;
+    index[1]=6;
+    ms[1]=qValue-PM;
+    ms[0]=1-ms[1];
+  }
+}
+float Fuzzycomputation(float *qValue)
+{
+    float msE[2]={0,0};
+    int indexE[2]={0,0};
+    float msEC[2]={0,0};
+    int indexEC[2]={0,0};
+    float speed;
+    Calecmembership(msE,qValue[0],indexE);
+    Calecmembership(msEC,qValue[1],indexEC);
+    speed=msE[0]*(msEC[0]*rule[indexE[0]][indexEC[0]]+msEC[1]*rule[indexE[0]][indexEC[1]])+msE[1]*(msEC[0]*rule[indexE[1]][indexEC[0]]+msEC[1]*rule[indexE[1]][indexEC[1]]);
+    return speed;
+}
+float FUR_PID(int target_E,int target_EC)
+{
+    float qValue[2]={0,0};
+    float speed;
+    qValue[0]=6.0*target_E/180;
+    qValue[1]=3.0*target_EC/180;
+    speed=0.1*Fuzzycomputation(qValue);
+    return speed;
+}
+int wandao()
+{
+    int i=55;
+    while(Bin_Image[i][IMGW/2]==1||Bin_Image[i][IMGW/2-1]==1||Bin_Image[i][IMGW/2+1]==1)
+    {
+        i--;
+        if (i<=1)
+            break;
+    }
+    return i;
+}
+
+void jjjs(int frame)
+{
+    static int sus_frame;
+    if(frame!=0)
+    {
+        sus_frame=frame;
+        return;
+    }
+
+    sus_frame--;
+    if(sus_frame>=0)
+        speed_delta=-0.8;
+    else
+        speed_delta=0;//mohu guan
+
+}
+
+int afterys()//chuliyuansuhenjindeqingkuang
+{
+    int lt,rt;
+
+    if((LEFT_EDGE_type==0&&RIGHT_EDGE_type==0))
+        return 0;
+    if(LEFT_EDGE_type==0)
+        return 1;//left yuanhuan
+    if(RIGHT_EDGE_type==0)
+        return 2;//right yuanhuan
+
+}
+
+
+int check_pd()
+{
+    if(distc>1000)
+    {
+        return 1;
+    }
+    return 0;
+
+}
+ int road_wid(int x)
+ {
+     int y=(int)((83-15)*1.0*x/59+15);
+
+     return y;
+ }
+
+void ytdx_event_check()
+{
+    int x, y;
+    for(x=0;x<9;x++)
+        tezheng[x]=0;
+    for (x = 0; x < 30; x+=3)
+    {
+        for (y = 2; y < 92; y+=3)
+        {
+            int i,j;
+            i=x/10;
+            j=(y-2)/30;
+            tezheng[i*3+j]+=output2[x][y];
+        }
+    }
+
+    check_element_by_tz(tezheng);
+    int yuzhi=100;
+    if(min_element[0]<yuzhi)
+    {
+        inelement=2;
+        process_yh(1);
+        return;
+    }
+    if(min_element[1]<yuzhi)
+    {
+        inelement=2;
+        process_yh(11);
+        return;
+    }
+    if(min_element[2]<yuzhi)
+    {
+        inelement=3;
+        process_cd();
+        return;
+    }
+
+
+    /*
+
+
+    int lost_left,lost_right;
+    int i;
+    for(i=40;i<50;i++)
+    {
+        if(Bin_Image[i][91]==0)
+            break;
+
+    }
+    if(i==50)
+        lost_right=1;
+    else
+        lost_right=0;
+
+    for(i=40;i<50;i++)
+    {
+        if(Bin_Image[i][3]==0)
+            break;
+
+    }
+    if(i==50)
+        lost_left=1;
+    else
+        lost_left=0;
+    ti=11;
+    if(lost_left==0&&lost_right==0)
+        return;
+    int zdl=wandao();
+    ti=12;
+    if(zdl>5)
+        return;
+    ti=13;
+    if(lost_right&&lost_left)
+        return;
+
+
+    static int crossflag=0;
+    ti=crossflag+20;
+    for(i=53;i>=zdl+3;i--)
+    {
+        int c1=0;
+        int temp_i=1;
+        int scan_row=i;
+        while(temp_i<40)
+        {
+            if(white_(Bin_Image[scan_row][47-temp_i])||white_(Bin_Image[scan_row][47-temp_i-1])||white_(Bin_Image[scan_row][47-temp_i-2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        temp_i=1;
+        while(temp_i<40)
+        {
+            if(white_(Bin_Image[scan_row][47+temp_i])||white_(Bin_Image[scan_row][47+temp_i+1])||white_(Bin_Image[scan_row][47+temp_i+2]))
+            {
+                temp_i++;
+                c1++;
+            }
+            else
+                break;
+
+        }
+        if(c1<road_wid(i)+8)
+            crossflag=1;
+        if(crossflag==1&&c1>road_wid(i)+25)
+        {
+            crossflag=2;
+        }
+        if(crossflag==2)
+        {
+            if(lost_left)
+            {
+                inelement=2;
+                process_yh(11);
+                return;
+            }
+            if(lost_right)
+            {
+                inelement=2;
+                process_yh(1);
+                return;
+            }
+        }
+
+    }
+*/
+
+}
+
+
+
+void process_ck(int x) //0左转，1右转
+{
+    static int ckstate;
+    static float ck_Yaw;
+    static float det_Yaw;
+
+
+    if(x==1)
+    {
+        smotor_pd=ck_right;
+        inelement=99;
+    }
+    if(x==0)
+    {
+        smotor_pd=ck_left;
+        inelement=99;
+    }
+
+
+    if (ckstate==0)
+    {
+        ck_Yaw=Yaw;
+        ckstate=1;
+
+    }
+    if(ckstate==1)
+    {
+        det_Yaw=Yaw-ck_Yaw;
+        if ( det_Yaw<-180)
+            det_Yaw=360+det_Yaw;
+        else if(det_Yaw>180)
+            det_Yaw=-360+det_Yaw;
+        if(det_Yaw>85||det_Yaw<-85)
+            ckstate=2;
+
+        flag_pd=1;
+    }
+    if (ckstate==2)
+    {
+        ckstate=0;
+        flag_pd=0;
+        inelement=0;
+    }
+    ti=ckstate;
+}
+
+
+
+
+
+void process_rk(int x)
+{
+    static int rkstate;
+    static float rk_Yaw;
+    static float det_Yaw;
+    inelement=98;
+    if(rkstate==0)
+    {
+        rk_Yaw=Yaw;
+        if (x==0)
+        {
+            SPEED_SET=0;
+            rkstate=1;
+
+        }
+        if(x==1)
+        {
+            SPEED_SET=0;
+            rkstate=11;
+        }
+    }
+
+    if(rkstate==1)
+    {
+        smotor_pd=ck_left;
+        det_Yaw=Yaw-rk_Yaw;
+        if ( det_Yaw<-180)
+            det_Yaw=360+det_Yaw;
+        else if(det_Yaw>180)
+            det_Yaw=-360+det_Yaw;
+        if(det_Yaw>85||det_Yaw<-85)
+            rkstate=2;
+
+        flag_pd=1;
+    }
+    if(rkstate==11)
+    {
+        smotor_pd=ck_right;
+        det_Yaw=Yaw-rk_Yaw;
+        if ( det_Yaw<-180)
+            det_Yaw=360+det_Yaw;
+        else if(det_Yaw>180)
+            det_Yaw=-360+det_Yaw;
+        if(det_Yaw>85||det_Yaw<-85)
+            rkstate=2;
+
+        flag_pd=1;
+    }
+    if(rkstate==2)
+    {
+        rkstate=0;
+        flag_pd=0;
+        //inelement=0;
+    }
+}
+
+void bfs_lty(unsigned char ori[60][94], unsigned char tar[60][94], int x, int y)
+{
+    if(ori[x][y]==1&&tar[x][y]==1)
+        return;
+    tar[x][y]=1;
+    if(x+1<60&&ori[x+1][y]==1&&tar[x+1][y]==0)
+        bfs_lty(ori,tar,x+1,y);
+    if(y+1<94&&ori[x][y+1]==1&&tar[x][y+1]==0)
+        bfs_lty(ori,tar,x,y+1);
+    if(x-1>=0&&ori[x-1][y]==1&&tar[x-1][y]==0)
+        bfs_lty(ori,tar,x-1,y);
+    if(y-1>=0&&ori[x][y-1]==1&&tar[x][y-1]==0)
+        bfs_lty(ori,tar,x,y-1);
+    return;
+}
+
+void check_element_by_tz(int tz[9])
+{
+    int i,j;
+    min_element[0]=99999;
+    min_element[1]=99999;
+    min_element[2]=99999;
+    int youyh[4][9]={
+        {0,33,17,4,28,0,7,30,20},
+        {0,31,18,2,29,2,7,30,26},
+        {0,29,18,0,29,1,5,30,19},
+        {2,33,18,5,27,0,9,33,23}
+    };
+    for(i=0;i<=3;i++)
+    {
+        int sum=0;
+        for( j=0;j<=8;j++)
+        {
+            sum+=(tz[j]-youyh[i][j])*(tz[j]-youyh[i][j]);
+        }
+        if (sum<min_element[0])
+            min_element[0]=sum;
+    }
+    int zuoyh[4][9]={
+        {18,26,0,4,28,0,26,30,4},
+        {15,31,4,0,28,4,15,20,8},
+        {17,30,0,2,29,1,20,30,5},
+        {18,24,0,7,25,0,25,30,1}
+    };
+    for(i=0;i<=3;i++)
+    {
+        int sum=0;
+        for( j=0;j<=8;j++)
+        {
+            sum+=(tz[j]-zuoyh[i][j])*(tz[j]-zuoyh[i][j]);
+        }
+        if (sum<min_element[1])
+            min_element[1]=sum;
+    }
+    int cd[10][9]={
+
+        {10,1,26,27,30,20,8,30,5},
+        {14,2,27,26,30,20,6,30,5},
+        {8,3,26,30,30,14,12,30,0},
+        {12,1,25,27,30,20,5,30,7},
+        {18,2,13,16,28,30,4,30,16},
+        {18,1,19,21,29,29,8,30,6},
+        {17,6,6,7,30,30,1,29,18},
+        {0,5,20,26,27,9,26,30,1},
+        {0,11,15,20,28,5,30,24,0},
+        {0,13,11,20,28,3,30,20,0}
+
+    };
+    for(i=0;i<=9;i++)
+    {
+        int sum=0;
+        for( j=0;j<=8;j++)
+        {
+            sum+=(tz[j]-cd[i][j])*(tz[j]-cd[i][j]);
+        }
+        if (sum<min_element[2])
+            min_element[2]=sum;
+    }
+}
+
+unsigned short Ad_Value(void)
+{
+unsigned short RightAverage=ADC_ReadAverage(ADC0,20);
+
+return RightAverage;
+}
+
+
+void qingkongsiyuansu()
+{
+    extern float q0,q1,q2,q3,exInt,eyInt,ezInt;
+    q0=1;
+    q1=0;
+    q2=0;
+    q3=0;
+    exInt=0;
+    eyInt=0;
+    ezInt=0;
+}
+
